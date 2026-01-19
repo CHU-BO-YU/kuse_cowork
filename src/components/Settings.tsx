@@ -1,4 +1,4 @@
-import { Component, createSignal, createMemo, Show, For } from "solid-js";
+import { Component, createSignal, createMemo, Show } from "solid-js";
 import { useSettings, AVAILABLE_MODELS, PROVIDER_PRESETS, getProviderFromModel } from "../stores/settings";
 import { testConnection } from "../lib/tauri-api";
 import { useI18n, SUPPORTED_LOCALES, Locale } from "../stores/i18n";
