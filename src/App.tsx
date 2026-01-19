@@ -1,4 +1,4 @@
-import { Component, Show, createSignal, onMount } from "solid-js";
+import { Component, Show, createSignal, onMount, onCleanup } from "solid-js";
 import { useSettings, loadSettings } from "./stores/settings";
 import { useI18n } from "./stores/i18n";
 import { Task, TaskMessage, AgentEvent, listTasks, createTask, deleteTask, runTaskAgent, getTask, getTaskMessages } from "./lib/tauri-api";
@@ -8,6 +8,7 @@ import SkillsList from "./components/SkillsList";
 import MCPSettings from "./components/MCPSettings";
 import TaskSidebar from "./components/TaskSidebar";
 import TaskPanel from "./components/TaskPanel";
+import "./styles/global.css"; // Ensure this is imported for layout & resize styles
 
 interface ToolExecution {
   id: number;
@@ -22,6 +23,15 @@ const App: Component = () => {
   // UI state
   const [showSkills, setShowSkills] = createSignal(false);
   const [showMCP, setShowMCP] = createSignal(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = createSignal(false);
+
+  // Layout state
+  const [sidebarWidth, setSidebarWidth] = createSignal(260);
+  // Fixed task panel width
+  const TASK_PANEL_WIDTH = 320;
+
+  const [isMobile, setIsMobile] = createSignal(window.innerWidth < 768);
+  const [showTaskPanel, setShowTaskPanel] = createSignal(window.innerWidth >= 1024);
 
   // Task state
   const [tasks, setTasks] = createSignal<Task[]>([]);
@@ -31,42 +41,49 @@ const App: Component = () => {
   const [toolExecutions, setToolExecutions] = createSignal<ToolExecution[]>([]);
   const [currentText, setCurrentText] = createSignal("");
 
-  onMount(async () => {
-    await loadSettings();
-    await refreshTasks();
+  onMount(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      setIsMobile(width < 768);
+      setShowTaskPanel(width >= 1024);
+    };
+    window.addEventListener("resize", handleResize);
+    onCleanup(() => window.removeEventListener("resize", handleResize));
+
+    // Async initialization
+    (async () => {
+      await loadSettings();
+      await refreshTasks();
+    })();
   });
 
   const toggleSkills = () => {
     setShowSkills(!showSkills());
-    // Close other panels if open
-    if (showSettings()) {
-      toggleSettings();
-    }
-    if (showMCP()) {
-      setShowMCP(false);
-    }
+    if (showSettings()) toggleSettings();
+    if (showMCP()) setShowMCP(false);
   };
 
   const toggleMCP = () => {
     setShowMCP(!showMCP());
-    // Close other panels if open
-    if (showSettings()) {
-      toggleSettings();
-    }
-    if (showSkills()) {
-      setShowSkills(false);
-    }
+    if (showSettings()) toggleSettings();
+    if (showSkills()) setShowSkills(false);
   };
 
   const handleToggleSettings = () => {
-    // Close other panels if open
-    if (showSkills()) {
-      setShowSkills(false);
-    }
-    if (showMCP()) {
-      setShowMCP(false);
-    }
+    if (showSkills()) setShowSkills(false);
+    if (showMCP()) setShowMCP(false);
     toggleSettings();
+  };
+
+  const handleToggleSidebar = () => {
+    setIsSidebarCollapsed(!isSidebarCollapsed());
+    // Restore width if expanding from collapsed state
+    if (isSidebarCollapsed()) {
+      // It's becoming collapsed
+    } else {
+      // It's expanding
+      if (sidebarWidth() < 200) setSidebarWidth(260);
+    }
   };
 
   const refreshTasks = async () => {
@@ -78,7 +95,6 @@ const App: Component = () => {
     const task = await createTask(title, description, projectPath);
     setActiveTask(task);
 
-    // Add user message to local state immediately for display
     const tempUserMessage: TaskMessage = {
       id: `temp-${Date.now()}`,
       task_id: task.id,
@@ -89,7 +105,6 @@ const App: Component = () => {
     setTaskMessages([tempUserMessage]);
     await refreshTasks();
 
-    // Start the agent
     setIsRunning(true);
     setToolExecutions([]);
     setCurrentText("");
@@ -109,12 +124,8 @@ const App: Component = () => {
       console.error("Task error:", err);
     } finally {
       setIsRunning(false);
-      // Refresh task to get final state
       const updated = await getTask(task.id);
-      if (updated) {
-        setActiveTask(updated);
-      }
-      // Reload messages to show saved conversation
+      if (updated) setActiveTask(updated);
       const messages = await getTaskMessages(task.id);
       setTaskMessages(messages);
       await refreshTasks();
@@ -129,7 +140,6 @@ const App: Component = () => {
         setCurrentText(event.content);
         break;
       case "plan":
-        // Update active task with plan
         setActiveTask((prev) => {
           if (!prev) return prev;
           return {
@@ -196,21 +206,24 @@ const App: Component = () => {
     }
   };
 
+
   const handleSelectTask = async (task: Task) => {
+    // Auto-close other panels to focus on task
+    if (showSettings()) toggleSettings();
+    setShowSkills(false);
+    setShowMCP(false);
+
     setActiveTask(task);
     setCurrentText("");
     setToolExecutions([]);
-    // Load conversation history for this task
     const messages = await getTaskMessages(task.id);
     setTaskMessages(messages);
   };
 
-  // Continue conversation with existing task
   const handleContinueTask = async (message: string, projectPath?: string) => {
     const task = activeTask();
     if (!task) return;
 
-    // Add user message to local state immediately for display
     const tempUserMessage: TaskMessage = {
       id: `temp-${Date.now()}`,
       task_id: task.id,
@@ -239,19 +252,14 @@ const App: Component = () => {
       console.error("Task error:", err);
     } finally {
       setIsRunning(false);
-      // Refresh task to get final state
       const updated = await getTask(task.id);
-      if (updated) {
-        setActiveTask(updated);
-      }
-      // Reload messages to show saved conversation
+      if (updated) setActiveTask(updated);
       const messages = await getTaskMessages(task.id);
       setTaskMessages(messages);
       await refreshTasks();
     }
   };
 
-  // Clear active task to start a new one
   const handleNewConversation = () => {
     setActiveTask(null);
     setTaskMessages([]);
@@ -259,10 +267,8 @@ const App: Component = () => {
     setToolExecutions([]);
   };
 
-  // Delete a task
   const handleDeleteTask = async (taskId: string) => {
     await deleteTask(taskId);
-    // If we deleted the active task, clear it
     if (activeTask()?.id === taskId) {
       setActiveTask(null);
       setTaskMessages([]);
@@ -272,24 +278,69 @@ const App: Component = () => {
     await refreshTasks();
   };
 
+  // Layout Styles
+  const getGridStyle = () => {
+    if (isMobile()) return "1fr";
+    if (!showTaskPanel()) {
+      // Hide Panel: [Sidebar] [Main]
+      return `${isSidebarCollapsed() ? "60px" : `${sidebarWidth()}px`} 1fr 0px`;
+    }
+    // Grid: [Sidebar] [Main Content] [Task Panel]
+    return `${isSidebarCollapsed() ? "60px" : `${sidebarWidth()}px`} 1fr ${TASK_PANEL_WIDTH}px`;
+  };
+
   return (
-    <div class="app agent-layout">
+    <div
+      class="app agent-layout"
+      style={{
+        "grid-template-columns": getGridStyle(),
+        "position": "relative"
+      }}
+    >
       <Show when={!isLoading()} fallback={<LoadingScreen />}>
-        <TaskSidebar
-          tasks={tasks()}
-          activeTaskId={activeTask()?.id || null}
-          onSelectTask={handleSelectTask}
-          onDeleteTask={handleDeleteTask}
-          onSettingsClick={handleToggleSettings}
-          onSkillsClick={toggleSkills}
-          onMCPClick={toggleMCP}
-        />
+        {/* Sidebar & Mobile Backdrop */}
+        <Show when={isMobile() && !isSidebarCollapsed()}>
+          <div
+            class="sidebar-backdrop"
+            onClick={() => setIsSidebarCollapsed(true)}
+          />
+        </Show>
+
+        <div
+          class={`sidebar-container ${isMobile() ? "mobile" : ""} ${isSidebarCollapsed() ? "collapsed" : ""}`}
+          style={{ width: isMobile() ? "260px" : (isSidebarCollapsed() ? "60px" : `${sidebarWidth()}px`) }}
+        >
+          <TaskSidebar
+            tasks={tasks()}
+            activeTaskId={activeTask()?.id || null}
+            collapsed={isMobile() ? false : isSidebarCollapsed()}
+            onToggleCollapse={handleToggleSidebar}
+            onSelectTask={handleSelectTask}
+            onDeleteTask={handleDeleteTask}
+            onSettingsClick={handleToggleSettings}
+            onSkillsClick={toggleSkills}
+            onMCPClick={toggleMCP}
+          />
+        </div>
+
+
         <main class="main-content">
+          {/* Mobile Header Toggle (if Sidebar is hidden) */}
+          <Show when={isMobile() && isSidebarCollapsed()}>
+            <button
+              class="mobile-menu-btn"
+              onClick={() => setIsSidebarCollapsed(false)}
+              style={{ position: 'absolute', top: '1rem', left: '1rem', 'z-index': 10 }}
+            >
+              ☰
+            </button>
+          </Show>
+
           <Show when={showSettings()}>
             <Settings />
           </Show>
           <Show when={showSkills()}>
-            <SkillsList />
+            <SkillsList onClose={() => setShowSkills(false)} />
           </Show>
           <Show when={showMCP()}>
             <MCPSettings onClose={() => setShowMCP(false)} />
@@ -307,7 +358,14 @@ const App: Component = () => {
             />
           </Show>
         </main>
-        <aside class="task-panel-container">
+
+        <aside
+          class="task-panel-container"
+          style={{
+            display: (isMobile() || !showTaskPanel()) ? 'none' : 'block',
+            width: `${TASK_PANEL_WIDTH}px`
+          }}
+        >
           <TaskPanel
             task={activeTask()}
             isRunning={isRunning()}

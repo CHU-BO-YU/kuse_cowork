@@ -67,7 +67,7 @@ const TaskPanel: Component<TaskPanelProps> = (props) => {
         }
       >
         {(task) => (
-          <>
+          <div class="task-panel-content">
             <div class="task-header">
               <div class="task-title">{task().title}</div>
               <div class={`task-status ${task().status}`}>
@@ -125,7 +125,7 @@ const TaskPanel: Component<TaskPanelProps> = (props) => {
                 <span>{t("taskPanel.working")}</span>
               </div>
             </Show>
-          </>
+          </div>
         )}
       </Show>
     </div>

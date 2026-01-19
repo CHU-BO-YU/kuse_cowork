@@ -6,11 +6,71 @@
   flex-direction: column;
   background: var(--sidebar);
   border-right: 1px solid var(--border);
+  transition: width 0.3s ease;
+  overflow: hidden;
+}
+
+.task-sidebar.collapsed {
+  width: 60px;
+  min-width: 60px;
 }
 
 .sidebar-header {
-  padding: 1.25rem 1.5rem;
+  padding: 1.25rem 1rem;
   border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  /* Add gap between brand and toggle */
+  height: 73px;
+  box-sizing: border-box;
+}
+
+.task-sidebar.collapsed .sidebar-header {
+  padding: 1.25rem 0;
+  justify-content: center;
+}
+
+.brand-container {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.task-sidebar.collapsed .brand-container {
+  flex: 0;
+  justify-content: center;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  height: 32px;
+  /* Ensure detail height stability */
+}
+
+.task-sidebar.collapsed .header-top {
+  justify-content: center;
+}
+
+.toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+
+.toggle-btn:hover {
+  color: var(--foreground);
+  background: var(--accent);
 }
 
 .logo-container {
@@ -20,8 +80,8 @@
 }
 
 .logo-image {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
 }
@@ -33,12 +93,14 @@
   color: var(--primary);
   margin: 0;
   letter-spacing: -0.02em;
+  white-space: nowrap;
 }
 
 .task-list {
   flex: 1;
   overflow-y: auto;
   padding: 1rem 0;
+  overflow-x: hidden;
 }
 
 .task-list-header {
@@ -49,6 +111,7 @@
   color: var(--muted-foreground);
   padding: 0 1.25rem;
   margin-bottom: 0.75rem;
+  white-space: nowrap;
 }
 
 .no-tasks {
@@ -69,7 +132,7 @@
 
 .task-item {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.75rem;
   padding: 0.75rem 1.25rem;
   cursor: pointer;
@@ -77,6 +140,18 @@
   border-left: 2px solid transparent;
   margin: 0 0.25rem;
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  height: 44px;
+  /* Fixed height for consistency */
+}
+
+/* Collapsed state for task item */
+.task-sidebar.collapsed .task-item {
+  padding: 0.75rem 0;
+  justify-content: center;
+  gap: 0;
+  border-radius: var(--radius-sm);
+  margin: 0.25rem;
+  border-left: none;
 }
 
 .task-item:hover {
@@ -88,6 +163,10 @@
   border-left-color: var(--primary);
 }
 
+.task-sidebar.collapsed .task-item.active {
+  color: var(--primary);
+}
+
 .task-icon {
   flex-shrink: 0;
   width: 1.125rem;
@@ -96,7 +175,7 @@
   align-items: center;
   justify-content: center;
   font-size: var(--text-xs);
-  margin-top: 0.125rem;
+  margin-top: 0;
   border-radius: var(--radius-full);
 }
 
@@ -176,6 +255,10 @@
   gap: 0.5rem;
 }
 
+.task-sidebar.collapsed .sidebar-footer {
+  padding: 1rem 0.5rem;
+}
+
 .footer-btn {
   width: 100%;
   padding: 0.625rem 1rem;
@@ -188,6 +271,15 @@
   cursor: pointer;
   transition: all var(--transition-fast);
   box-shadow: none;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  justify-content: flex-start;
+}
+
+.task-sidebar.collapsed .footer-btn {
+  justify-content: center;
+  padding: 0.625rem;
 }
 
 .footer-btn:hover {

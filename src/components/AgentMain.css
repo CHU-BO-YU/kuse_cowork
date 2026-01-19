@@ -2,7 +2,6 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--background);
 }
 
 .agent-setup {
@@ -139,7 +138,7 @@
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  padding: 0.625rem 1rem;
+  padding: 14px 1rem 10px 1rem;
   font-size: var(--text-base);
 }
 

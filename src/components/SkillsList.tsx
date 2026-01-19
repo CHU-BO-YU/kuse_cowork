@@ -4,7 +4,11 @@ import { useI18n } from "../stores/i18n";
 import Icon from "./Icon";
 import "./SkillsList.css";
 
-const SkillsList: Component = () => {
+interface SkillsListProps {
+  onClose: () => void;
+}
+
+const SkillsList: Component<SkillsListProps> = (props) => {
   const { t } = useI18n();
   const [skills, setSkills] = createSignal<SkillMetadata[]>([]);
   const [loading, setLoading] = createSignal(true);
@@ -24,8 +28,13 @@ const SkillsList: Component = () => {
   return (
     <div class="skills-list">
       <div class="skills-header">
-        <h2>{t("skills.title")}</h2>
-        <p>{t("skills.desc")}</p>
+        <div class="header-content">
+          <h2>{t("skills.title")}</h2>
+          <p>{t("skills.desc")}</p>
+        </div>
+        <button class="header-close-btn" onClick={props.onClose}>
+          <Icon name="close" size={24} />
+        </button>
       </div>
 
       <Show

@@ -2,6 +2,7 @@ import { Component, For, Show, createSignal, createMemo, onMount } from "solid-j
 import { AVAILABLE_MODELS, PROVIDER_PRESETS, ProviderConfig } from "../stores/settings";
 import { useI18n } from "../stores/i18n";
 import { getOllamaModels, OllamaModel } from "../lib/tauri-api";
+import CustomSelect from "./CustomSelect";
 import Icon from "./Icon";
 import "./ModelSelector.css";
 
@@ -162,7 +163,7 @@ const ModelSelector: Component<ModelSelectorProps> = (props) => {
       {/* Cloud service selection */}
       <Show when={providerType() === "cloud"}>
         <div class="cloud-selector">
-          <select
+          <CustomSelect
             value={(() => {
               const currentVal = props.value;
               let exists = false;
@@ -175,25 +176,17 @@ const ModelSelector: Component<ModelSelectorProps> = (props) => {
               }
               return exists ? currentVal : "";
             })()}
-            onChange={(e) => handleCloudModelChange(e.currentTarget.value)}
-          >
-            <option value="" disabled selected>
-              {t("modelSelector.selectModel")}
-            </option>
-            <For each={Object.entries(cloudModels())}>
-              {([_key, categoryData]) => (
-                <optgroup label={categoryData.name}>
-                  <For each={categoryData.models}>
-                    {(model) => (
-                      <option value={model.id}>
-                        {model.name} - {model.description}
-                      </option>
-                    )}
-                  </For>
-                </optgroup>
-              )}
-            </For>
-          </select>
+            onChange={(val) => handleCloudModelChange(val)}
+            options={Object.values(cloudModels()).map((category) => ({
+              label: category.name,
+              options: category.models.map((m) => ({
+                value: m.id,
+                label: m.name,
+                description: m.description,
+              })),
+            }))}
+            placeholder={t("modelSelector.selectModel")}
+          />
 
           <Show when={currentProviderInfo()}>
             <div class="selected-info">

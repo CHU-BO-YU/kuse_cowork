@@ -3,6 +3,7 @@ import { useSettings, AVAILABLE_MODELS, PROVIDER_PRESETS, getProviderFromModel }
 import { testConnection } from "../lib/tauri-api";
 import { useI18n, SUPPORTED_LOCALES, Locale } from "../stores/i18n";
 import ModelSelector from "./ModelSelector";
+import CustomSelect from "./CustomSelect";
 import Icon from "./Icon";
 import "./Settings.css";
 
@@ -85,14 +86,16 @@ const Settings: Component = () => {
         <div class="settings-section">
           <h3>{t("settings.language")}</h3>
           <div class="form-group">
-            <select
-              value={locale()}
-              onChange={(e) => setLocale(e.currentTarget.value as Locale)}
-            >
-              <For each={Object.entries(SUPPORTED_LOCALES)}>
-                {([key, label]) => <option value={key}>{label}</option>}
-              </For>
-            </select>
+            <div class="form-group">
+              <CustomSelect
+                value={locale()}
+                onChange={(val) => setLocale(val as Locale)}
+                options={Object.entries(SUPPORTED_LOCALES).map(([key, label]) => ({
+                  value: key,
+                  label: label
+                }))}
+              />
+            </div>
           </div>
         </div>
 

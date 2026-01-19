@@ -158,20 +158,21 @@ const MCPSettings: Component<MCPSettingsProps> = (props) => {
     <div class="mcp-settings">
       <div class="mcp-settings-header">
         <h2>{t("mcp.title")}</h2>
-        <div class="header-actions">
+        <button class="header-close-btn" onClick={props.onClose}>
+          <Icon name="close" size={24} />
+        </button>
+      </div>
+
+      <div class="mcp-settings-content">
+        <div class="mcp-toolbar">
           <button class="add-btn" onClick={() => setShowAddForm(true)}>
             {t("mcp.addServer")}
           </button>
           <button class="refresh-btn" onClick={refreshData} disabled={loading()}>
             {loading() ? t("common.loading") : t("mcp.refresh")}
           </button>
-          <button class="header-close-btn" onClick={props.onClose}>
-            <Icon name="close" size={24} />
-          </button>
         </div>
-      </div>
 
-      <div class="mcp-settings-content">
         {showAddForm() && (
           <div class="add-form">
             <h3>{editingServer() ? t("mcp.addForm.titleEdit") : t("mcp.addForm.titleAdd")}</h3>

@@ -1,4 +1,4 @@
-import { Component, Show, For, createSignal } from "solid-js";
+import { Component, Show, For, createSignal, onMount, onCleanup, createEffect } from "solid-js";
 import Markdown from "./Markdown";
 import Icon from "./Icon";
 import { Task, TaskMessage, openMultipleFoldersDialog } from "../lib/tauri-api";
@@ -27,6 +27,26 @@ const AgentMain: Component<AgentMainProps> = (props) => {
 
   // Check if we're in an existing conversation
   const isInConversation = () => props.activeTask !== null && props.messages.length > 0;
+
+  const adjustTextareaHeight = () => {
+    if (textareaRef) {
+      textareaRef.style.height = "auto";
+      textareaRef.style.height = `${Math.min(textareaRef.scrollHeight, 200)}px`;
+    }
+  };
+
+  onMount(() => {
+    // Initial adjustment and resize listener
+    adjustTextareaHeight();
+    window.addEventListener("resize", adjustTextareaHeight);
+    onCleanup(() => window.removeEventListener("resize", adjustTextareaHeight));
+  });
+
+  // Watch for input changes to adjust height (e.g. reset on clear)
+  createEffect(() => {
+    input(); // dependency
+    adjustTextareaHeight();
+  });
 
   const handleAddFolders = async () => {
     const folders = await openMultipleFoldersDialog();
@@ -60,9 +80,7 @@ const AgentMain: Component<AgentMainProps> = (props) => {
       const title = firstLine.length > 50 ? firstLine.slice(0, 50) + "..." : firstLine;
       props.onNewTask(title, message, projectPath, props.currentLocale);
     }
-    if (textareaRef) {
-      textareaRef.style.height = "auto";
-    }
+    // Height reset handled by createEffect on input change
     setInput("");
   };
 
@@ -217,12 +235,7 @@ const AgentMain: Component<AgentMainProps> = (props) => {
                 <textarea
                   ref={textareaRef}
                   value={input()}
-                  onInput={(e) => {
-                    setInput(e.currentTarget.value);
-                    const target = e.currentTarget;
-                    target.style.height = "auto";
-                    target.style.height = `${Math.min(target.scrollHeight, 200)}px`;
-                  }}
+                  onInput={(e) => setInput(e.currentTarget.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();

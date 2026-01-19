@@ -1,6 +1,6 @@
 {
   "name": "kuse-cowork",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Open-source Claude Cowork desktop app with custom API key and model selection",
   "type": "module",
   "scripts": {

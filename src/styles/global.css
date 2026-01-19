@@ -134,7 +134,76 @@ h6 {
 
 .app.agent-layout {
   display: grid;
-  grid-template-columns: 260px 1fr 320px;
+  /* grid-template-columns set via inline style for resizing */
+  overflow: hidden;
+}
+
+.resizer {
+  width: 4px;
+  /* Interaction area */
+  cursor: col-resize;
+  background: transparent;
+  transition: background 0.2s;
+  z-index: 10;
+  height: 100%;
+}
+
+.resizer:hover,
+.resizer:active {
+  background: var(--border);
+  /* Visual feedback */
+}
+
+/* Sidebar Container */
+.sidebar-container {
+  height: 100vh;
+  background: var(--sidebar);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-container.mobile {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 50;
+  box-shadow: var(--shadow-lg);
+  transition: transform 0.3s ease;
+}
+
+.sidebar-container.mobile.collapsed {
+  transform: translateX(-100%);
+  width: 260px !important;
+  /* Keep width but hide via transform */
+}
+
+/* Backdrop */
+.sidebar-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 40;
+  backdrop-filter: blur(2px);
+  animation: fadeIn 0.2s ease;
+}
+
+.mobile-menu-btn {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  color: var(--foreground);
+  font-size: 1.25rem;
 }
 
 .main-content {

@@ -6,6 +6,13 @@
   overflow-y: auto;
 }
 
+.task-panel-content,
+.task-panel-empty {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
 .task-panel-empty {
   display: flex;
   flex-direction: column;

@@ -119,7 +119,7 @@ impl Default for AgentConfig {
     }
 }
 
-pub const DEFAULT_SYSTEM_PROMPT: &str = ""; // Deprecated, using i18n_prompts
+
 
 /// Build system prompt with dynamic skills information
 pub fn build_system_prompt(locale: Option<&str>) -> String {

@@ -5,21 +5,47 @@
 }
 
 .skills-header {
+  position: relative;
   margin-bottom: 2rem;
   text-align: center;
 }
 
-.skills-header h2 {
+.header-content h2 {
   font-family: 'Instrument Serif', Georgia, serif;
   font-size: 1.75rem;
   margin-bottom: 0.5rem;
   color: var(--foreground);
 }
 
-.skills-header p {
+.header-content p {
   color: var(--muted-foreground);
   font-size: 0.9375rem;
   line-height: 1.5;
+  margin: 0;
+}
+
+.header-close-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: transparent;
+  border: none;
+  color: var(--muted-foreground);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+}
+
+.header-close-btn:hover {
+  background: var(--accent);
+  color: var(--foreground);
 }
 
 .skills-loading,
@@ -30,9 +56,6 @@
 }
 
 .skills-empty {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
   max-width: 600px;
   margin: 0 auto;
 }

@@ -1,201 +1,124 @@
-# Open-source Alternative for Claude Code Desktop App
+# Kuse Cowork
 
-**Works with any models, BYOK, written in Rust** 🚀
+Open-source Alternative for Claude Code Desktop App. Works with any model, BYOK (Bring Your Own Key), written in Rust.
 
-[*Demo video: Kuse Cowork in action*](https://github.com/user-attachments/assets/e128e657-c1be-4134-828d-01a9a94ef055)
-
-## ✨ Why Kuse Cowork?
-
-### 🔐 **BYOK (Bring Your Own Key)**
-Use your own API keys or even **bring your own local models** for ultimate privacy control.
-
-### ⚡ **Pure Rust Agent**
-Agent fully written in Rust with **zero external dependencies** - blazingly fast and memory-safe.
-
-### 🌍 **Native Cross-Platform**
-True native performance on macOS, Windows, and Linux.
-
-### 🛡️ **Container Isolation & Security**
-Uses Docker containers for secure command execution and complete isolation.
-
-### 🧩 **Extensible Skills System**
-Support for custom skills to extend agent capabilities.
-Default skills are: docx, pdf, pptx, xlsx.
-
-### 🔗 **MCP Protocol Support**
-Full support for Model Context Protocol (MCP) for seamless tool integration.
+> [!NOTE]
+> This project is in active development. Please exercise caution when allowing the agent to access local directories.
 
 ---
 
-## 🚀 Features
+## Why Kuse Cowork?
 
-- **🔒 Local & Private**: Runs entirely on your machine, API calls go directly to your chosen provider
-- **🔑 BYOK Support**: Use your own Anthropic, OpenAI, or local model APIs
-- **🎯 Model Agnostic**: Works with Claude, GPT, local models, and more
-- **🖥️ Cross-Platform**: macOS (ARM & Intel), Windows, and Linux
-- **🪶 Lightweight**: ~10MB app size using Tauri
-- **🐳 Containerized**: Docker isolation for enhanced security
-- **🧩 Skills**: Extensible skill system for custom capabilities
-- **🔗 MCP**: Model Context Protocol support for tool integration
+**BYOK (Bring Your Own Key)**
+Use your own API keys (Anthropic, OpenAI) or local models (Ollama) for complete privacy and control.
 
-## Security Note
-This is still an early project and please be super careful when connecting with your local folders.
+**Pure Rust Agent**
+Built entirely in Rust for maximum performance and memory safety, with zero external runtime dependencies.
 
-## 🚀 Quick Start
+**Native Cross-Platform**
+Native performance on macOS, Windows, and Linux.
 
-Get up and running in minutes:
+**Container Isolation**
+Executes commands within Docker containers to ensure security and isolation from your host system.
 
-### 1. Build the project and start
+**Extensible Skills System**
+Extend agent capabilities with custom skills. Supports document handling (docx, pdf, etc.) out of the box.
 
-Will update to a clean release build soon. 
-
-### 2. ⚙️ Configure Your AI Model
-1. Open **Settings** (gear icon in sidebar)
-2. **Choose your AI provider:**
-   - **Anthropic Claude** - Enter your Claude API key
-   - **OpenAI GPT** - Enter your OpenAI API key
-   - **Local Models** - Configure Ollama/LM Studio endpoint
-3. **Select your preferred model** (Claude 3.5 Sonnet, GPT-4, etc.)
-
-### 3. 🔑 Enter API Key
-- Add your API key in the settings
-- Keys are stored locally and never shared
-
-### 4. 📁 Set Workspace Folder
-- Click **"Select Project Path"** when creating a new task
-- Choose your project folder or workspace directory
-- The agent will work within this folder context
-
-### 5. 🎯 Start Your First Task!
-1. Click **"New Task"**
-2. Describe what you want to accomplish
-3. Watch the AI agent work on your project
-4. Review the plan and implementation steps
-
-**Example tasks:**
-- *"Organize my folders"*
-- *"Read all the receipts and make an expense reports"*
-- *"Summarize the meeting notes and give me all the TODOs."*
-
+**MCP Protocol Support**
+Full support for the Model Context Protocol (MCP) for seamless tool integration.
 
 ---
 
-## 🛠️ Development
+## Features
+
+*   **Local & Private**: Runs on your machine; API calls go directly to your provider.
+*   **Model Agnostic**: Compatible with Claude, GPT, local LLMs, and more.
+*   **Cross-Platform**: Support for macOS (ARM/Intel), Windows, and Linux.
+*   **Lightweight**: Minimal footprint using Tauri (~10MB).
+*   **Containerized**: Docker isolation for secure execution.
+
+---
+
+## Quick Start
 
 ### Prerequisites
+*   [Node.js](https://nodejs.org/) 18+
+*   [Rust](https://rustup.rs/)
+*   [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Required for container isolation)
 
-- [Node.js](https://nodejs.org/) 18+
-- [Rust](https://rustup.rs/) (for Tauri)
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (required for container isolation)
-- [Tauri Prerequisites](https://tauri.app/start/prerequisites/)
+### Installation
 
-**Note**: Docker Desktop must be installed and running for container isolation features. Without Docker, the app will still work but commands will run without isolation.
+1.  **Clone the repository**
+    ```bash
+    git clone https://github.com/kuse-ai/kuse-cowork.git
+    cd kuse-cowork
+    ```
 
-### Setup
+2.  **Install dependencies**
+    ```bash
+    npm install
+    ```
 
-```bash
-# Clone the repo
-git clone https://github.com/kuse-ai/kuse-cowork.git
-cd kuse-cowork
+3.  **Run in development mode**
+    ```bash
+    npm run tauri dev
+    ```
 
-# Install dependencies
-npm install
+4.  **Build for production**
+    ```bash
+    npm run tauri build
+    ```
 
-# Run in development mode
-npm run tauri dev
+---
 
-# Build for production
-npm run tauri build
-```
+## Usage
 
-### Project Structure
+### Configure AI Model
+1.  Open **Settings** (gear icon in sidebar).
+2.  Select your **Language** (English / Traditional Chinese).
+3.  Choose your **AI Provider** (Cloud / Ollama / Custom).
+4.  Enter your **API Key** (keys are stored locally).
 
-```
-kuse-cowork/
-├── src/                    # Frontend (SolidJS + TypeScript)
-│   ├── components/         # UI components
-│   ├── lib/               # Utilities (API clients, MCP)
-│   └── stores/            # State management
-├── src-tauri/             # Backend (Rust + Tauri)
-│   ├── src/               # Rust source code
-│   │   ├── agent/         # Agent implementation
-│   │   ├── tools/         # Built-in tools
-│   │   ├── skills/        # Skills system
-│   │   ├── mcp/           # MCP protocol support
-│   │   └── database.rs    # Local data storage
-│   ├── Cargo.toml         # Rust dependencies
-│   └── tauri.conf.json    # Tauri configuration
-├── .github/workflows/     # CI/CD for cross-platform builds
-└── docs/                  # Documentation and assets
-```
+### Start a Task
+1.  Click **New Task**.
+2.  Describe your objective (e.g., "Analyze the CSV files in the data folder").
+3.  Select a working directory if needed.
+4.  Watch the agent plan and execute the task step-by-step.
 
-## 🔧 Configuration
+---
 
-### API Providers
+## Contributing
 
-Kuse Cowork supports multiple AI providers:
+### How to Add/Update Languages
 
-- **Anthropic Claude**: Direct API integration
-- **OpenAI GPT**: Full GPT model support
-- **Local Models**: Ollama, LM Studio, or any OpenAI-compatible endpoint
-- **Custom APIs**: Configure any compatible endpoint
+Kuse Cowork supports internationalization (i18n). You can easily add a new language or update existing translations.
 
-### Settings
+**1. Locate Translation Files**
+All translation files are located in `src/locales/`.
+*   `en.json` (English - Base)
+*   `zh-TW.json` (Traditional Chinese)
 
-All settings are stored locally and never shared:
+**2. Add a New Language**
+1.  Create a new JSON file in `src/locales/` (e.g., `ja.json` for Japanese).
+2.  Copy the content from `en.json` to your new file.
+3.  Translate all values (do not change the keys).
+4.  Register the new language in `src/stores/i18n.ts` (or relevant configuration file).
 
-- **API Configuration**: Keys and endpoints for your chosen provider
-- **Model Selection**: Choose from available models
-- **Agent Behavior**: Temperature, max tokens, system prompts
-- **Security**: Container isolation settings
-- **Skills**: Enable/disable custom skills
-- **MCP Servers**: Configure external tool providers
+**3. Update Existing Translations**
+1.  Open the relevant JSON file (e.g., `zh-TW.json`).
+2.  Find the key you want to update.
+3.  Modify the value.
+4.  Save the file.
 
-## 🛡️ Security & Privacy
+> [!TIP]
+> Ensure that any variables like `{count}` or `{name}` are preserved in the translated string.
 
-### Container Isolation
-Kuse Cowork uses Docker containers to isolate all external command execution:
-- **Complete isolation** from your host system
-- **Secure networking** with controlled access
-- **Resource limits** to prevent abuse
-- **Clean environments** for each execution
+---
 
-### Privacy First
-- **No telemetry** - nothing is sent to our servers
-- **Local storage** - all data stays on your machine
-- **Direct API calls** - communications only with your chosen AI provider
-- **Open source** - full transparency of all code
-## 📄 License
+## License
 
 MIT License - see [LICENSE](LICENSE) for details.
 
-## 🏗️ Built With
+## Credits
 
-- **[Tauri](https://tauri.app/)** - Lightweight desktop framework
-- **[Rust](https://rust-lang.org/)** - Systems programming language
-
-## 🚧 Roadmap & TODOs
-
-### Upcoming Features
-- **📦 Streamlined Release Pipeline** - Automated builds and easier distribution
-- **🎯 Simplified Setup** - One-click installation for non-developers
-- **🐬 Lightweight Sandbox** - Migrate to an lightweight sandbox.
-- **🧠 Context Engineering** - Enhanced support for better context management
-- **🔧 Auto-configuration** - Intelligent setup for common development environments
-- **📱 Mobile Support** - Cross-platform mobile app support
-
-### Current Limitations
-- Docker Desktop required for full isolation features
-- Manual setup process for development environment
-
-## 🙏 Credits
-
-Inspired by:
-- **[Claude Cowork](https://claude.com/blog/cowork-research-preview)** - The original inspiration
-
----
-**⭐ Star this repo if you find it useful!**
-
-<div align="center">
-  <img src="public/kuse-logo.png" alt="Kuse Cowork Logo" width="200"/>
-</div>
+Inspired by **Claude Cowork**.

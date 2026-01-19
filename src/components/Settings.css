@@ -6,12 +6,10 @@
 }
 
 .settings-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.25rem 2rem;
-  background: var(--sidebar);
-  border-bottom: 1px solid var(--border);
+  position: relative;
+  text-align: center;
+  padding: 2rem 2rem 0;
+  margin-bottom: 1rem;
 }
 
 .settings-header h2 {
@@ -19,6 +17,7 @@
   font-size: 1.5rem;
   font-weight: 400;
   color: var(--foreground);
+  margin: 0;
 }
 
 .close-btn {
@@ -37,6 +36,9 @@
 }
 
 .header-close-btn {
+  position: absolute;
+  top: 2rem;
+  right: 2rem;
   background: transparent;
   border: none;
   color: var(--muted-foreground);
@@ -210,6 +212,7 @@ select option {
 /* Number input */
 input[type="number"] {
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 input[type="number"]::-webkit-outer-spin-button,
