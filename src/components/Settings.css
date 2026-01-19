@@ -36,11 +36,31 @@
   transform: none;
 }
 
+.header-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--muted-foreground);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+}
+
+.header-close-btn:hover {
+  background: var(--accent);
+  color: var(--foreground);
+}
+
 .settings-content {
   flex: 1;
   overflow-y: auto;
   padding: 2rem;
-  max-width: 600px;
   margin: 0 auto;
   width: 100%;
 }

@@ -40,6 +40,7 @@ export interface AgentRequest {
   project_path?: string;
   system_prompt?: string;
   max_turns?: number;
+  locale?: string;
 }
 
 export type AgentEvent =
@@ -82,6 +83,7 @@ export interface TaskAgentRequest {
   message: string;
   project_path?: string;
   max_turns?: number;
+  locale?: string;
 }
 
 export interface TaskMessage {
@@ -103,6 +105,7 @@ export interface EnhancedChatRequest {
   content: string;
   project_path?: string;
   enable_tools: boolean;
+  locale?: string;
 }
 
 export type ChatEvent =
@@ -511,4 +514,24 @@ export async function getSkillsList(): Promise<SkillMetadata[]> {
     return [];
   }
   return invoke<SkillMetadata[]>("get_skills_list");
+}
+
+// Ollama API
+export interface OllamaModel {
+  name: string;
+  size: number;
+  modified_at: string;
+  digest: string;
+}
+
+export async function getOllamaModels(baseUrl: string): Promise<OllamaModel[]> {
+  if (!isTauri()) {
+    // Web fallback - direct fetch
+    const url = `${baseUrl.replace(/\/$/, "")}/api/tags`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error("Failed to fetch models");
+    const data = await response.json();
+    return data.models || [];
+  }
+  return invoke<OllamaModel[]>("get_ollama_models", { baseUrl });
 }

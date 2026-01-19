@@ -1,5 +1,6 @@
 import { Component, For, Show } from "solid-js";
 import { Task } from "../lib/tauri-api";
+import { useI18n } from "../stores/i18n";
 import "./TaskSidebar.css";
 
 interface TaskSidebarProps {
@@ -13,6 +14,8 @@ interface TaskSidebarProps {
 }
 
 const TaskSidebar: Component<TaskSidebarProps> = (props) => {
+  const { t } = useI18n();
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "completed":
@@ -33,11 +36,11 @@ const TaskSidebar: Component<TaskSidebarProps> = (props) => {
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
     if (days === 0) {
-      return "Today";
+      return t("taskSidebar.today");
     } else if (days === 1) {
-      return "Yesterday";
+      return t("taskSidebar.yesterday");
     } else if (days < 7) {
-      return `${days} days ago`;
+      return t("taskSidebar.daysAgo").replace("{days}", days.toString());
     } else {
       return date.toLocaleDateString();
     }
@@ -53,13 +56,13 @@ const TaskSidebar: Component<TaskSidebarProps> = (props) => {
       </div>
 
       <div class="task-list">
-        <div class="task-list-header">Tasks</div>
+        <div class="task-list-header">{t("taskSidebar.title")}</div>
         <Show
           when={props.tasks.length > 0}
           fallback={
             <div class="no-tasks">
-              <p>No tasks yet</p>
-              <p class="hint">Create a new task to get started</p>
+              <p>{t("taskSidebar.noTasks")}</p>
+              <p class="hint">{t("taskSidebar.createHint")}</p>
             </div>
           }
         >
@@ -80,7 +83,7 @@ const TaskSidebar: Component<TaskSidebarProps> = (props) => {
                     e.stopPropagation();
                     props.onDeleteTask(task.id);
                   }}
-                  title="Delete task"
+                  title={t("taskSidebar.delete")}
                 >
                   ×
                 </button>
@@ -95,16 +98,16 @@ const TaskSidebar: Component<TaskSidebarProps> = (props) => {
           class="footer-btn primary-btn"
           onClick={props.onSkillsClick}
         >
-          Skills
+          {t("taskSidebar.skills")}
         </button>
         <button
           class="footer-btn primary-btn"
           onClick={props.onMCPClick}
         >
-          MCPs
+          {t("taskSidebar.mcps")}
         </button>
         <button class="footer-btn primary-btn" onClick={props.onSettingsClick}>
-          Settings
+          {t("taskSidebar.settings")}
         </button>
       </div>
     </aside>

@@ -92,125 +92,64 @@ pub async fn save_settings(
 
 #[command]
 pub async fn test_connection(state: State<'_, Arc<AppState>>) -> Result<String, CommandError> {
-    use crate::llm_client::{LLMClient, Message};
+    use crate::llm_client::LLMClient;
 
     let settings = state.db.get_settings()?;
 
     // Debug logging
     println!("[test_connection] model: {}", settings.model);
-    println!("[test_connection] base_url: {}", settings.base_url);
-    println!("[test_connection] api_key length: {}", settings.api_key.len());
-    println!("[test_connection] provider: {}", settings.get_provider());
-    println!("[test_connection] is_local_provider: {}, allows_empty_api_key: {}",
-        settings.is_local_provider(), settings.allows_empty_api_key());
 
-    if settings.api_key.is_empty() && !settings.allows_empty_api_key() {
-        return Ok("No API key configured".to_string());
+    // Create client instance for connection check
+    let client = LLMClient::new(
+        settings.api_key.clone(),
+        Some(settings.base_url.clone()),
+        None, // provider_id inferred from model or settings
+        Some(&settings.model),
+    );
+
+    match client.check_connection().await {
+        Ok(true) => Ok("success".to_string()),
+        Ok(false) => Ok("Connection failed: Service unreachable".to_string()),
+        Err(e) => Err(CommandError { message: format!("Connection error: {}", e) }),
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct OllamaModel {
+    pub name: String,
+    pub size: u64,
+    pub modified_at: String,
+    pub digest: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct OllamaResponse {
+    models: Vec<OllamaModel>,
+}
+
+#[command]
+pub async fn get_ollama_models(base_url: String) -> Result<Vec<OllamaModel>, CommandError> {
+    let client = reqwest::Client::new();
+    let url = format!("{}/api/tags", base_url.trim_end_matches('/'));
+    
+    // Attempt connection with short timeout
+    let response = client
+        .get(&url)
+        .timeout(std::time::Duration::from_secs(2))
+        .send()
+        .await
+        .map_err(|e| CommandError { message: format!("Failed to connect to Ollama: {}", e) })?;
+
+    if !response.status().is_success() {
+        return Err(CommandError { message: format!("Ollama returned error: {}", response.status()) });
     }
 
-    // Choose test method based on provider type
-    if settings.is_local_provider() {
-        // Local service - use LLMClient to check connection
-        let llm_client = LLMClient::new(
-            String::new(), // Local services don't need API key
-            Some(settings.base_url.clone()),
-            None,
-            Some(&settings.model),
-        );
+    let data: OllamaResponse = response
+        .json()
+        .await
+        .map_err(|e| CommandError { message: format!("Failed to parse Ollama response: {}", e) })?;
 
-        match llm_client.check_connection().await {
-            Ok(true) => Ok("success".to_string()),
-            Ok(false) => Ok("Error: Cannot connect to local service, please ensure it is running".to_string()),
-            Err(e) => Ok(format!("Error: {}", e)),
-        }
-    } else {
-        // Cloud service - check provider type
-        let provider = settings.get_provider();
-
-        match provider.as_str() {
-            "anthropic" => {
-                // Anthropic - use ClaudeClient
-                let client = ClaudeClient::new(settings.api_key, Some(settings.base_url));
-                let messages = vec![ClaudeMessage {
-                    role: "user".to_string(),
-                    content: "Hi".to_string(),
-                }];
-
-                match client.send_message(messages, &settings.model, 10, None).await {
-                    Ok(_) => Ok("success".to_string()),
-                    Err(e) => Ok(format!("Error: {}", e)),
-                }
-            }
-            "openai" => {
-                // OpenAI - test with actual API request using LLMClient
-                let llm_client = LLMClient::new_with_openai_headers(
-                    settings.api_key.clone(),
-                    Some(settings.base_url.clone()),
-                    Some("openai"),
-                    Some(&settings.model),
-                    settings.openai_organization.clone(),
-                    settings.openai_project.clone(),
-                );
-
-                let test_messages = vec![Message {
-                    role: "user".to_string(),
-                    content: "Hi".to_string(),
-                }];
-
-                // Send a minimal test request
-                match llm_client.send_message(test_messages, &settings.model, 10, None).await {
-                    Ok(_) => Ok("success".to_string()),
-                    Err(e) => Ok(format!("Error: {}", e)),
-                }
-            }
-            "google" => {
-                // Google Gemini - test with actual API request
-                let llm_client = LLMClient::new(
-                    settings.api_key.clone(),
-                    Some(settings.base_url.clone()),
-                    Some("google"),
-                    Some(&settings.model),
-                );
-
-                let test_messages = vec![Message {
-                    role: "user".to_string(),
-                    content: "Hi".to_string(),
-                }];
-
-                match llm_client.send_message(test_messages, &settings.model, 10, None).await {
-                    Ok(_) => Ok("success".to_string()),
-                    Err(e) => Ok(format!("Error: {}", e)),
-                }
-            }
-            _ => {
-                // Other cloud services - try sending a test message
-                let llm_client = LLMClient::new(
-                    settings.api_key.clone(),
-                    Some(settings.base_url.clone()),
-                    None,
-                    Some(&settings.model),
-                );
-
-                let test_messages = vec![Message {
-                    role: "user".to_string(),
-                    content: "Hi".to_string(),
-                }];
-
-                // Try to send a minimal test request
-                match llm_client.send_message(test_messages, &settings.model, 10, None).await {
-                    Ok(_) => Ok("success".to_string()),
-                    Err(e) => {
-                        // If sending fails, try simple connection check (for services that support it)
-                        match llm_client.check_connection().await {
-                            Ok(true) => Ok("success".to_string()),
-                            Ok(false) => Ok(format!("Error: {}", e)),
-                            Err(conn_e) => Ok(format!("Error: {}", conn_e)),
-                        }
-                    }
-                }
-            }
-        }
-    }
+    Ok(data.models)
 }
 
 // Conversation commands
@@ -419,6 +358,7 @@ pub struct AgentRequest {
     pub project_path: Option<String>,
     pub system_prompt: Option<String>,
     pub max_turns: Option<u32>,
+    pub locale: Option<String>,
 }
 
 #[command]
@@ -441,6 +381,9 @@ pub async fn run_agent(
     if let Some(prompt) = request.system_prompt {
         config.system_prompt = prompt;
     } else {
+        // Use localized system prompt
+        config.system_prompt = crate::agent::types::build_system_prompt(request.locale.as_deref());
+
         // Add MCP servers info to default system prompt
         let mcp_servers = state.mcp_manager.get_server_statuses().await;
         let mut mcp_info = String::new();
@@ -510,6 +453,7 @@ pub struct EnhancedChatRequest {
     pub content: String,
     pub project_path: Option<String>,
     pub enable_tools: bool,
+    pub locale: Option<String>,
 }
 
 #[command]
@@ -646,14 +590,41 @@ pub async fn send_chat_with_tools(
         }
     }
 
-    config.system_prompt = format!(r#"You are Kuse Cowork, an AI assistant that helps users for non dev work.
+
+
+    // Get localized base prompt for chat mode (simplified version of agent prompt)
+    let base_prompt = if let Some(locale) = &request.locale {
+        if locale == "zh-TW" {
+            r#"你是一個名為 Kuse Cowork 的 AI 助手，專門協助使用者進行非開發類的工作。
+
+你擁有可以讀寫檔案、執行指令以及搜尋程式碼庫的工具。
+
+當使用者要求你做一些需要存取檔案或執行指令的事情時，請使用適當的工具。
+若是簡單的問題或對話，請直接回答，不需使用工具。
+
+請保持簡潔並樂於助人。使用工具時請說明你正在做什麼。"#
+        } else {
+            r#"You are Kuse Cowork, an AI assistant that helps users for non dev work.
 
 You have access to tools that allow you to read and write files, execute commands, and search through codebases.
 
 When the user asks you to do something that requires accessing files or running commands, use the appropriate tools.
 For simple questions or conversations, respond directly without using tools.
 
-Be concise and helpful. Explain what you're doing when using tools.{}"#, mcp_info);
+Be concise and helpful. Explain what you're doing when using tools."#
+        }
+    } else {
+        r#"You are Kuse Cowork, an AI assistant that helps users for non dev work.
+
+You have access to tools that allow you to read and write files, execute commands, and search through codebases.
+
+When the user asks you to do something that requires accessing files or running commands, use the appropriate tools.
+For simple questions or conversations, respond directly without using tools.
+
+Be concise and helpful. Explain what you're doing when using tools."#
+    };
+
+    config.system_prompt = format!("{}{}", base_prompt, mcp_info);
 
     let message_builder = MessageBuilder::new(
         config.clone(),
@@ -1132,6 +1103,7 @@ pub struct TaskAgentRequest {
     pub message: String,
     pub project_path: Option<String>,
     pub max_turns: Option<u32>,
+    pub locale: Option<String>,
 }
 
 #[command]
@@ -1160,7 +1132,11 @@ pub async fn run_task_agent(
     state.db.update_task_status(&request.task_id, "running")?;
 
     // Build agent config with MCP servers info
+    // Build agent config with MCP servers info
     let mut config = AgentConfig::default();
+    
+    // Use localized system prompt
+    config.system_prompt = crate::agent::types::build_system_prompt(request.locale.as_deref());
 
     // Add MCP servers info to system prompt
     let mcp_servers = state.mcp_manager.get_server_statuses().await;

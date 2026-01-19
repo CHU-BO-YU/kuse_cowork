@@ -31,11 +31,13 @@ struct ClaudeRequest {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct ClaudeResponse {
     content: Vec<ContentBlock>,
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct ContentBlock {
     #[serde(rename = "type")]
     #[allow(dead_code)]
@@ -73,6 +75,7 @@ impl ClaudeClient {
         }
     }
 
+    #[allow(dead_code)]
     pub async fn send_message(
         &self,
         messages: Vec<Message>,

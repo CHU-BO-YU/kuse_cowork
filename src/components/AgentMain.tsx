@@ -1,24 +1,29 @@
 import { Component, Show, For, createSignal } from "solid-js";
 import Markdown from "./Markdown";
+import Icon from "./Icon";
 import { Task, TaskMessage, openMultipleFoldersDialog } from "../lib/tauri-api";
 import { useSettings } from "../stores/settings";
+import { useI18n } from "../stores/i18n";
 import "./AgentMain.css";
 
 interface AgentMainProps {
-  onNewTask: (title: string, description: string, projectPath?: string) => void;
-  onContinueTask: (message: string, projectPath?: string) => void;
+  onNewTask: (title: string, description: string, projectPath?: string, locale?: string) => void;
+  onContinueTask: (message: string, projectPath?: string, locale?: string) => void;
   onNewConversation: () => void;
   currentText: string;
   isRunning: boolean;
   activeTask: Task | null;
   messages: TaskMessage[];
+  currentLocale?: string;
 }
 
 const AgentMain: Component<AgentMainProps> = (props) => {
   const { isConfigured, toggleSettings } = useSettings();
+  const { t } = useI18n();
   const [input, setInput] = createSignal("");
   const [selectedPaths, setSelectedPaths] = createSignal<string[]>([]);
   const [showPathsPanel, setShowPathsPanel] = createSignal(false);
+  let textareaRef: HTMLTextAreaElement | undefined;
 
   // Check if we're in an existing conversation
   const isInConversation = () => props.activeTask !== null && props.messages.length > 0;
@@ -48,12 +53,15 @@ const AgentMain: Component<AgentMainProps> = (props) => {
 
     if (isInConversation()) {
       // Continue existing conversation
-      props.onContinueTask(message, projectPath);
+      props.onContinueTask(message, projectPath, props.currentLocale);
     } else {
       // Create new task
       const firstLine = message.split("\n")[0];
       const title = firstLine.length > 50 ? firstLine.slice(0, 50) + "..." : firstLine;
-      props.onNewTask(title, message, projectPath);
+      props.onNewTask(title, message, projectPath, props.currentLocale);
+    }
+    if (textareaRef) {
+      textareaRef.style.height = "auto";
     }
     setInput("");
   };
@@ -64,9 +72,9 @@ const AgentMain: Component<AgentMainProps> = (props) => {
         when={isConfigured()}
         fallback={
           <div class="agent-setup">
-            <h2>Welcome to Kuse Cowork</h2>
-            <p>Configure your API key to start using the agent</p>
-            <button onClick={toggleSettings}>Open Settings</button>
+            <h2>{t("agent.welcome")}</h2>
+            <p>{t("agent.configure")}</p>
+            <button onClick={toggleSettings}>{t("agent.openSettings")}</button>
           </div>
         }
       >
@@ -77,52 +85,62 @@ const AgentMain: Component<AgentMainProps> = (props) => {
               when={props.activeTask || props.currentText || props.messages.length > 0}
               fallback={
                 <div class="empty-state">
-                  <h2>Agent Mode</h2>
-                  <p>Describe a task and the agent will create a plan and execute it step by step.</p>
+                  <h2>{t("agent.modeTitle")}</h2>
+                  <p>{t("agent.modeDesc")}</p>
                   <div class="capabilities">
                     <div class="capability">
-                      <span class="capability-icon">📁</span>
-                      <span>Read, write, and edit files</span>
+                      <div class="capability-icon">
+                        <Icon name="file" size={24} />
+                      </div>
+                      <span>{t("agent.capabilities.files")}</span>
                     </div>
                     <div class="capability">
-                      <span class="capability-icon">🔍</span>
-                      <span>Search and explore codebases</span>
+                      <div class="capability-icon">
+                        <Icon name="search" size={24} />
+                      </div>
+                      <span>{t("agent.capabilities.search")}</span>
                     </div>
                     <div class="capability">
-                      <span class="capability-icon">⚡</span>
-                      <span>Run commands and scripts</span>
+                      <div class="capability-icon">
+                        <Icon name="command" size={24} />
+                      </div>
+                      <span>{t("agent.capabilities.commands")}</span>
                     </div>
                     <div class="capability">
-                      <span class="capability-icon">🐳</span>
-                      <span>Execute in Docker containers</span>
+                      <div class="capability-icon">
+                        <Icon name="docker" size={24} />
+                      </div>
+                      <span>{t("agent.capabilities.docker")}</span>
                     </div>
                   </div>
                 </div>
               }
             >
-              {/* Show saved message history */}
-              <For each={props.messages}>
-                {(message) => (
-                  <div class={`message ${message.role}`}>
-                    <div class="message-label">
-                      {message.role === "user" ? "You" : "Agent"}
+              <div class="messages">
+                {/* Show saved message history */}
+                <For each={props.messages}>
+                  {(message) => (
+                    <div class={`message ${message.role}`}>
+                      <div class="message-label">
+                        {message.role === "user" ? "You" : "Agent"}
+                      </div>
+                      <div class="message-content">
+                        <Markdown>{message.content}</Markdown>
+                      </div>
                     </div>
-                    <div class="message-content">
-                      <Markdown>{message.content}</Markdown>
-                    </div>
-                  </div>
-                )}
-              </For>
+                  )}
+                </For>
 
-              {/* Show current streaming text (when running a new task) */}
-              <Show when={props.currentText && props.isRunning}>
-                <div class="message assistant streaming">
-                  <div class="message-label">Agent</div>
-                  <div class="message-content">
-                    <Markdown>{props.currentText}</Markdown>
+                {/* Show current streaming text (when running a new task) */}
+                <Show when={props.currentText && props.isRunning}>
+                  <div class="message assistant streaming">
+                    <div class="message-label">Agent</div>
+                    <div class="message-content">
+                      <Markdown>{props.currentText}</Markdown>
+                    </div>
                   </div>
-                </div>
-              </Show>
+                </Show>
+              </div>
             </Show>
           </div>
 
@@ -132,12 +150,14 @@ const AgentMain: Component<AgentMainProps> = (props) => {
             <Show when={showPathsPanel() && selectedPaths().length > 0}>
               <div class="selected-paths">
                 <div class="paths-header">
-                  <span class="paths-label">Mounted Folders ({selectedPaths().length})</span>
+                  <span class="paths-label">
+                    {t("agent.mountedFolders").replace("{count}", selectedPaths().length.toString())}
+                  </span>
                   <button
                     type="button"
                     class="paths-close"
                     onClick={() => setShowPathsPanel(false)}
-                    title="Hide paths"
+                    title={t("agent.hidePaths")}
                   >
                     ×
                   </button>
@@ -155,7 +175,7 @@ const AgentMain: Component<AgentMainProps> = (props) => {
                           class="path-remove"
                           onClick={() => handleRemovePath(path)}
                           disabled={props.isRunning}
-                          title={`Remove ${path}`}
+                          title={t("agent.removePath").replace("{path}", path)}
                         >
                           ×
                         </button>
@@ -168,31 +188,15 @@ const AgentMain: Component<AgentMainProps> = (props) => {
 
             <form class="agent-form" onSubmit={handleSubmit}>
               <div class="input-row">
-                <textarea
-                  value={input()}
-                  onInput={(e) => setInput(e.currentTarget.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSubmit(e);
-                    }
-                  }}
-                  placeholder={isInConversation()
-                    ? "Continue the conversation..."
-                    : "Describe a task... (e.g., 'Find and fix the authentication bug in auth.ts')"
-                  }
-                  disabled={props.isRunning}
-                  rows={3}
-                />
-                <div class="input-actions">
+                <div class="input-tools">
                   <button
                     type="button"
                     class={`path-toggle ${selectedPaths().length > 0 ? "active" : ""}`}
                     onClick={handleAddFolders}
                     disabled={props.isRunning}
-                    title="Add folders to mount"
+                    title={t("agent.addFolders")}
                   >
-                    📁
+                    <Icon name="folder" size={18} />
                     <Show when={selectedPaths().length > 0}>
                       <span class="path-count">{selectedPaths().length}</span>
                     </Show>
@@ -203,15 +207,44 @@ const AgentMain: Component<AgentMainProps> = (props) => {
                       class="new-chat-btn ghost"
                       onClick={props.onNewConversation}
                       disabled={props.isRunning}
-                      title="Start new conversation"
+                      title={t("agent.newChat")}
                     >
-                      +
+                      <Icon name="plus" size={20} />
                     </button>
                   </Show>
-                  <button type="submit" class="submit-btn" disabled={props.isRunning || !input().trim()}>
-                    {props.isRunning ? "Running..." : isInConversation() ? "Send" : "Start Task"}
-                  </button>
                 </div>
+
+                <textarea
+                  ref={textareaRef}
+                  value={input()}
+                  onInput={(e) => {
+                    setInput(e.currentTarget.value);
+                    const target = e.currentTarget;
+                    target.style.height = "auto";
+                    target.style.height = `${Math.min(target.scrollHeight, 200)}px`;
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSubmit(e);
+                    }
+                  }}
+                  placeholder={isInConversation()
+                    ? t("agent.continueConversation")
+                    : t("agent.inputPlaceholderExample")
+                  }
+                  disabled={props.isRunning}
+                  rows={1}
+                  style={{ "min-height": "50px", height: "auto" }}
+                />
+
+                <button
+                  type="submit"
+                  class={`submit-btn ${!props.isRunning && isInConversation() ? "icon-btn" : ""}`}
+                  disabled={props.isRunning || !input().trim()}
+                >
+                  {props.isRunning ? t("agent.running") : isInConversation() ? <Icon name="send" size={18} /> : t("agent.startTask")}
+                </button>
               </div>
             </form>
           </div>

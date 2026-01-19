@@ -1,5 +1,6 @@
 import { Component, For, Show } from "solid-js";
 import { Task } from "../lib/tauri-api";
+import { useI18n } from "../stores/i18n";
 import "./TaskPanel.css";
 
 interface TaskPanelProps {
@@ -15,6 +16,8 @@ interface ToolExecution {
 }
 
 const TaskPanel: Component<TaskPanelProps> = (props) => {
+  const { t } = useI18n();
+
   const getStepIcon = (status: string) => {
     switch (status) {
       case "completed":
@@ -41,14 +44,25 @@ const TaskPanel: Component<TaskPanelProps> = (props) => {
     }
   };
 
+  // Helper for translating status
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case "planning": return t("taskPanel.planning");
+      case "running": return t("taskPanel.running");
+      case "completed": return t("taskPanel.completed");
+      case "failed": return t("taskPanel.failed");
+      default: return status;
+    }
+  };
+
   return (
     <div class="task-panel">
       <Show
         when={props.task}
         fallback={
           <div class="task-panel-empty">
-            <p>No active task</p>
-            <p class="hint">Start a task from the main panel</p>
+            <p>{t("taskPanel.noActiveTask")}</p>
+            <p class="hint">{t("taskPanel.startHint")}</p>
           </div>
         }
       >
@@ -57,10 +71,7 @@ const TaskPanel: Component<TaskPanelProps> = (props) => {
             <div class="task-header">
               <div class="task-title">{task().title}</div>
               <div class={`task-status ${task().status}`}>
-                {task().status === "planning" && "Planning..."}
-                {task().status === "running" && "Running"}
-                {task().status === "completed" && "Completed"}
-                {task().status === "failed" && "Failed"}
+                {getStatusText(task().status)}
               </div>
             </div>
 
@@ -68,7 +79,7 @@ const TaskPanel: Component<TaskPanelProps> = (props) => {
 
             <Show when={task().plan && task().plan!.length > 0}>
               <div class="plan-section">
-                <div class="plan-header">Plan</div>
+                <div class="plan-header">{t("taskPanel.plan")}</div>
                 <div class="plan-steps">
                   <For each={task().plan}>
                     {(step) => (
@@ -90,7 +101,7 @@ const TaskPanel: Component<TaskPanelProps> = (props) => {
 
             <Show when={props.toolExecutions.length > 0}>
               <div class="tools-section">
-                <div class="tools-header">Tools</div>
+                <div class="tools-header">{t("taskPanel.tools")}</div>
                 <div class="tool-list">
                   <For each={props.toolExecutions}>
                     {(tool) => (
@@ -111,7 +122,7 @@ const TaskPanel: Component<TaskPanelProps> = (props) => {
             <Show when={props.isRunning}>
               <div class="running-indicator">
                 <span class="pulse"></span>
-                <span>Working...</span>
+                <span>{t("taskPanel.working")}</span>
               </div>
             </Show>
           </>

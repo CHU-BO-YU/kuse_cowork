@@ -1,0 +1,216 @@
+{
+    "agent": {
+        "welcome": "歡迎使用 Kuse Cowork",
+        "configure": "請設定您的 API Key 以開始使用 Agent",
+        "openSettings": "開啟設定",
+        "modeTitle": "Agent 模式",
+        "modeDesc": "描述一個任務，Agent 將會為您制定計畫並一步步執行。",
+        "capabilities": {
+            "files": "讀取、寫入與編輯檔案",
+            "search": "搜尋與探索程式碼庫",
+            "commands": "執行指令與腳本",
+            "docker": "在 Docker 容器中執行"
+        },
+        "inputPlaceholder": "描述一個任務...",
+        "inputPlaceholderExample": "描述一個任務... (例如：'找出並修復 auth.ts 中的驗證錯誤')",
+        "startTask": "開始任務",
+        "send": "發送",
+        "continueConversation": "繼續對話...",
+        "running": "執行中...",
+        "processing": "處理中...",
+        "mountedFolders": "已掛載目錄 ({count})",
+        "hidePaths": "隱藏目錄列表",
+        "removePath": "移除 {path}",
+        "addFolders": "新增掛載目錄",
+        "newChat": "開始新對話"
+    },
+    "sidebar": {
+        "chat": "聊天",
+        "agent": "Agent",
+        "newChat": "新對話",
+        "dashboard": "儀表板",
+        "skills": "技能",
+        "mcps": "MCP 工具",
+        "settings": "設定"
+    },
+    "settings": {
+        "title": "設定",
+        "close": "關閉",
+        "language": "語言",
+        "modelSelection": "模型選擇",
+        "apiConfiguration": "API 設定",
+        "localService": {
+            "title": "本地服務",
+            "desc": "無需 API Key 即可使用 {name}"
+        },
+        "apiKey": {
+            "label": "API Key",
+            "optional": "(選填)",
+            "placeholder": "您的 API Key",
+            "customOptional": "自訂端點可不填 API Key",
+            "get": "取得 API Key："
+        },
+        "baseUrl": {
+            "label": "API Base URL",
+            "hintLocal": "請確認位址與您的本機服務設定相符",
+            "hintCustom": "自訂代理或相容的 API 位址"
+        },
+        "openai": {
+            "orgId": "組織 ID (Organization ID)",
+            "orgHint": "您的 OpenAI 組織 ID (若您屬於多個組織)",
+            "projectId": "專案 ID (Project ID)",
+            "projectHint": "您的 OpenAI 專案 ID (用於專案級存取控制)"
+        },
+        "maxTokens": "最大 Token 數 (Max Tokens)",
+        "test": {
+            "button": "測試連線",
+            "testing": "測試中...",
+            "success": "✓ 連線成功！"
+        },
+        "dataStorage": {
+            "title": "資料儲存",
+            "desc1": "所有資料皆儲存於您電腦中的 SQLite 資料庫。",
+            "desc2": "API Key 受到安全保護，除了傳送給 API 提供商外，絕不會傳送至其他伺服器。"
+        },
+        "model": "模型",
+        "save": "儲存"
+    },
+    "modelSelector": {
+        "tabs": {
+            "cloud": "雲端",
+            "ollama": "Ollama",
+            "custom": "自訂"
+        },
+        "cloud": {
+            "official": "官方 API",
+            "aggregator": "聚合服務"
+        },
+        "ollama": {
+            "checking": "正在檢查 Ollama 服務...",
+            "running": "Ollama 正在運行 · {count} 個模型",
+            "notRunning": {
+                "title": "Ollama 未運行",
+                "desc": "請安裝並啟動",
+                "retry": "重試"
+            },
+            "noModels": {
+                "title": "未安裝任何模型",
+                "hint": "執行 {command} 來安裝模型"
+            },
+            "refresh": "重新整理",
+            "modelInfo": {
+                "label": "當前模型：",
+                "updated": "更新於 {time}"
+            }
+        },
+        "custom": {
+            "notice": "使用與 OpenAI 相容的 API 服務 (vLLM / TGI / SGLang 等)",
+            "modelId": "模型 ID",
+            "placeholder": "例如：meta-llama/Llama-3.2-8B",
+            "hint": "請於設定中配置 API URL 與 Key"
+        },
+        "selectModel": "請選擇模型...",
+        "time": {
+            "today": "今天",
+            "yesterday": "昨天",
+            "daysAgo": "{days} 天前",
+            "weeksAgo": "{weeks} 週前",
+            "monthsAgo": "{months} 個月前"
+        }
+    },
+    "taskSidebar": {
+        "title": "任務清單",
+        "noTasks": "尚無任務",
+        "createHint": "建立新任務以開始",
+        "delete": "刪除任務",
+        "skills": "技能",
+        "mcps": "MCP 工具",
+        "settings": "設定",
+        "today": "今天",
+        "yesterday": "昨天",
+        "daysAgo": "{days} 天前"
+    },
+    "taskPanel": {
+        "noActiveTask": "無執行中的任務",
+        "startHint": "從主畫面開始一個新任務",
+        "planning": "規劃中...",
+        "running": "執行中",
+        "completed": "已完成",
+        "failed": "失敗",
+        "plan": "執行計畫",
+        "tools": "工具調用",
+        "working": "處理中..."
+    },
+    "skills": {
+        "title": "技能庫",
+        "desc": "技能是 Agent 用於執行特殊任務的指令集。",
+        "loading": "載入技能中...",
+        "active": "已啟用",
+        "viewDetails": "查看詳情",
+        "empty": {
+            "title": "尚未安裝任何技能",
+            "desc": "技能可以讓 Agent 具備執行特定任務的能力，例如：管理日曆、搜尋網路、執行 Docker 等。"
+        },
+        "help": {
+            "title": "如何新增技能：",
+            "step1": "在應用程式資料夾中建立 'skills' 資料夾",
+            "step2": "為每個技能建立一個子資料夾 (例如：'web-search')",
+            "step3": "在該資料夾中建立 'SKILL.md' 檔案",
+            "step4": "在 SKILL.md 中定義指令與描述",
+            "step5": "重新整理此頁面以載入新技能"
+        },
+        "modal": {
+            "location": "位置：",
+            "files": "檔案結構：",
+            "usage": "如何使用：",
+            "usageDesc": "在對話中直接請求 Agent 使用此技能。",
+            "platformPaths": "平台路徑："
+        }
+    },
+    "mcp": {
+        "title": "MCP 伺服器",
+        "addServer": "新增伺服器",
+        "refresh": "重新整理",
+        "listTitle": "已設定的伺服器",
+        "empty": "尚未設定伺服器",
+        "emptyHint": "點擊上方按鈕新增 MCP 伺服器",
+        "connect": "連線",
+        "disconnect": "斷開連線",
+        "connecting": "連線中...",
+        "edit": "編輯",
+        "delete": "刪除",
+        "deleteConfirm": "確定要刪除此伺服器嗎？",
+        "add": "新增",
+        "update": "更新",
+        "cancel": "取消",
+        "warning": "注意：",
+        "warningDesc": "請確保您信任此 MCP 伺服器。連線後，此伺服器將可存取您的部分資料。",
+        "addForm": {
+            "titleAdd": "新增 MCP 伺服器",
+            "titleEdit": "編輯 MCP 伺服器",
+            "name": "名稱",
+            "namePlaceholder": "我的伺服器",
+            "url": "伺服器 URL",
+            "urlPlaceholder": "http://localhost:8000/sse",
+            "advanced": "進階設定 (OAuth)",
+            "oauthId": "Client ID",
+            "oauthSecret": "Client Secret"
+        },
+        "status": {
+            "connected": "已連線",
+            "disconnected": "未連線",
+            "error": "錯誤"
+        },
+        "alerts": {
+            "nameRequired": "請輸入伺服器名稱",
+            "urlRequired": "請輸入伺服器 URL",
+            "saveFailed": "儲存伺服器失敗，請檢查主控台日誌"
+        }
+    },
+    "common": {
+        "loading": "載入中...",
+        "error": "錯誤",
+        "cancel": "取消",
+        "confirm": "確認"
+    }
+}

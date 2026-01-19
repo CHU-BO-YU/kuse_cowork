@@ -65,6 +65,10 @@
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
 .mode-tab:hover {
@@ -92,6 +96,10 @@
   border: 1px dashed var(--border);
   box-shadow: none;
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
 .new-chat-btn:hover {
@@ -175,6 +183,10 @@
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
 .footer-btn:hover {

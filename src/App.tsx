@@ -1,5 +1,6 @@
 import { Component, Show, createSignal, onMount } from "solid-js";
 import { useSettings, loadSettings } from "./stores/settings";
+import { useI18n } from "./stores/i18n";
 import { Task, TaskMessage, AgentEvent, listTasks, createTask, deleteTask, runTaskAgent, getTask, getTaskMessages } from "./lib/tauri-api";
 import AgentMain from "./components/AgentMain";
 import Settings from "./components/Settings";
@@ -16,6 +17,7 @@ interface ToolExecution {
 
 const App: Component = () => {
   const { showSettings, toggleSettings, isLoading } = useSettings();
+  const { locale } = useI18n();
 
   // UI state
   const [showSkills, setShowSkills] = createSignal(false);
@@ -99,6 +101,7 @@ const App: Component = () => {
           message: description,
           project_path: projectPath,
           max_turns: 50,
+          locale: locale(),
         },
         handleAgentEvent
       );
@@ -228,6 +231,7 @@ const App: Component = () => {
           message,
           project_path: projectPath || task.project_path || undefined,
           max_turns: 50,
+          locale: locale(),
         },
         handleAgentEvent
       );
@@ -299,6 +303,7 @@ const App: Component = () => {
               isRunning={isRunning()}
               activeTask={activeTask()}
               messages={taskMessages()}
+              currentLocale={locale()}
             />
           </Show>
         </main>

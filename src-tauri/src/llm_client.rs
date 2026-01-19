@@ -349,6 +349,7 @@ impl LLMClient {
     }
 
     /// Send non-streaming message
+    #[allow(dead_code)]
     pub async fn send_message(
         &self,
         messages: Vec<Message>,

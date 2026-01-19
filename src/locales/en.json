@@ -1,0 +1,216 @@
+{
+    "agent": {
+        "welcome": "Welcome to Kuse Cowork",
+        "configure": "Configure your API key to start using the agent",
+        "openSettings": "Open Settings",
+        "modeTitle": "Agent Mode",
+        "modeDesc": "Describe a task and the agent will create a plan and execute it step by step.",
+        "capabilities": {
+            "files": "Read, write, and edit files",
+            "search": "Search and explore codebases",
+            "commands": "Run commands and scripts",
+            "docker": "Execute in Docker containers"
+        },
+        "inputPlaceholder": "Describe a task...",
+        "inputPlaceholderExample": "Describe a task... (e.g., 'Find and fix the authentication bug in auth.ts')",
+        "startTask": "Start Task",
+        "send": "Send",
+        "continueConversation": "Continue the conversation...",
+        "running": "Running...",
+        "processing": "Processing...",
+        "mountedFolders": "Mounted Folders ({count})",
+        "hidePaths": "Hide paths",
+        "removePath": "Remove {path}",
+        "addFolders": "Add folders to mount",
+        "newChat": "Start new conversation"
+    },
+    "sidebar": {
+        "chat": "Chat",
+        "agent": "Agent",
+        "newChat": "New Chat",
+        "dashboard": "Dashboard",
+        "skills": "Skills",
+        "mcps": "MCPs",
+        "settings": "Settings"
+    },
+    "settings": {
+        "title": "Settings",
+        "close": "Close",
+        "language": "Language",
+        "modelSelection": "Model Selection",
+        "apiConfiguration": "API Configuration",
+        "localService": {
+            "title": "Local Service - No API Key Required",
+            "desc": "Please ensure {name} is running locally"
+        },
+        "apiKey": {
+            "label": "API Key",
+            "optional": "(Optional)",
+            "placeholder": "your-api-key",
+            "customOptional": "API key is optional for custom endpoints",
+            "get": "Get your API key from"
+        },
+        "baseUrl": {
+            "label": "API Base URL",
+            "hintLocal": "Ensure the address matches your local service configuration",
+            "hintCustom": "Customize proxy or compatible API address"
+        },
+        "openai": {
+            "orgId": "Organization ID",
+            "orgHint": "Your OpenAI organization ID (if you belong to multiple organizations)",
+            "projectId": "Project ID",
+            "projectHint": "Your OpenAI project ID (for project-level access control)"
+        },
+        "maxTokens": "Max Tokens",
+        "test": {
+            "button": "Test Connection",
+            "testing": "Testing...",
+            "success": "✓ Connection successful!"
+        },
+        "dataStorage": {
+            "title": "Data Storage",
+            "desc1": "All data is stored locally on your computer in SQLite database.",
+            "desc2": "API key is securely stored and never sent to any server except the API provider."
+        },
+        "model": "Model",
+        "save": "Save"
+    },
+    "modelSelector": {
+        "tabs": {
+            "cloud": "Cloud",
+            "ollama": "Ollama",
+            "custom": "Custom"
+        },
+        "cloud": {
+            "official": "Official API",
+            "aggregator": "Aggregation Services"
+        },
+        "ollama": {
+            "checking": "Checking Ollama service...",
+            "running": "Ollama running · {count} models",
+            "notRunning": {
+                "title": "Ollama not running",
+                "desc": "Please install and start",
+                "retry": "Retry"
+            },
+            "noModels": {
+                "title": "No models installed",
+                "hint": "Run {command} to install a model"
+            },
+            "refresh": "Refresh",
+            "modelInfo": {
+                "label": "Current model:",
+                "updated": "Updated {time}"
+            }
+        },
+        "custom": {
+            "notice": "Use OpenAI-compatible API service (vLLM / TGI / SGLang, etc.)",
+            "modelId": "Model ID",
+            "placeholder": "e.g., meta-llama/Llama-3.2-8B",
+            "hint": "Configure API URL and key in Settings"
+        },
+        "selectModel": "Select a model...",
+        "time": {
+            "today": "Today",
+            "yesterday": "Yesterday",
+            "daysAgo": "{days} days ago",
+            "weeksAgo": "{weeks} weeks ago",
+            "monthsAgo": "{months} months ago"
+        }
+    },
+    "taskSidebar": {
+        "title": "Tasks",
+        "noTasks": "No tasks yet",
+        "createHint": "Create a new task to get started",
+        "delete": "Delete task",
+        "skills": "Skills",
+        "mcps": "MCPs",
+        "settings": "Settings",
+        "today": "Today",
+        "yesterday": "Yesterday",
+        "daysAgo": "{days} days ago"
+    },
+    "taskPanel": {
+        "noActiveTask": "No active task",
+        "startHint": "Start a task from the main panel",
+        "planning": "Planning...",
+        "running": "Running",
+        "completed": "Completed",
+        "failed": "Failed",
+        "plan": "Plan",
+        "tools": "Tools",
+        "working": "Working..."
+    },
+    "skills": {
+        "title": "Skill Library",
+        "desc": "Skills are instruction sets used by the agent to perform specialized tasks.",
+        "loading": "Loading skills...",
+        "active": "Active",
+        "viewDetails": "View Details",
+        "empty": {
+            "title": "No skills installed",
+            "desc": "Skills empower the agent to perform specific tasks, such as managing calendars, searching the web, or running Docker containers."
+        },
+        "help": {
+            "title": "How to add skills:",
+            "step1": "Create a 'skills' folder in the application data directory",
+            "step2": "Create a subfolder for each skill (e.g., 'web-search')",
+            "step3": "Create a 'SKILL.md' file inside that folder",
+            "step4": "Define instructions and descriptions in SKILL.md",
+            "step5": "Refresh this page to load new skills"
+        },
+        "modal": {
+            "location": "Location:",
+            "files": "Files:",
+            "usage": "Usage:",
+            "usageDesc": "Ask the agent to use this skill directly in the chat.",
+            "platformPaths": "Platform Paths:"
+        }
+    },
+    "mcp": {
+        "title": "MCP Servers",
+        "addServer": "Add Server",
+        "refresh": "Refresh",
+        "listTitle": "Configured Servers",
+        "empty": "No servers configured",
+        "emptyHint": "Click the button above to add an MCP server",
+        "connect": "Connect",
+        "disconnect": "Disconnect",
+        "connecting": "Connecting...",
+        "edit": "Edit",
+        "delete": "Delete",
+        "deleteConfirm": "Are you sure you want to delete this server?",
+        "add": "Add",
+        "update": "Update",
+        "cancel": "Cancel",
+        "warning": "Warning:",
+        "warningDesc": "Ensure you trust this MCP server. Connecting will grant it access to parts of your data.",
+        "addForm": {
+            "titleAdd": "Add MCP Server",
+            "titleEdit": "Edit MCP Server",
+            "name": "Name",
+            "namePlaceholder": "My Server",
+            "url": "Server URL",
+            "urlPlaceholder": "http://localhost:8000/sse",
+            "advanced": "Advanced (OAuth)",
+            "oauthId": "Client ID",
+            "oauthSecret": "Client Secret"
+        },
+        "status": {
+            "connected": "Connected",
+            "disconnected": "Disconnected",
+            "error": "Error"
+        },
+        "alerts": {
+            "nameRequired": "Please enter a server name",
+            "urlRequired": "Please enter a server URL",
+            "saveFailed": "Failed to save server, check console logs"
+        }
+    },
+    "common": {
+        "loading": "Loading...",
+        "error": "Error",
+        "cancel": "Cancel",
+        "confirm": "Confirm"
+    }
+}

@@ -1,14 +1,9 @@
 import { Component, For, Show, createSignal, createMemo, onMount } from "solid-js";
 import { AVAILABLE_MODELS, PROVIDER_PRESETS, ProviderConfig } from "../stores/settings";
+import { useI18n } from "../stores/i18n";
+import { getOllamaModels, OllamaModel } from "../lib/tauri-api";
+import Icon from "./Icon";
 import "./ModelSelector.css";
-
-// Ollama model info interface
-interface OllamaModel {
-  name: string;
-  size: number;  // bytes
-  modified_at: string;
-  digest: string;
-}
 
 // Format file size
 function formatSize(bytes: number): string {
@@ -16,20 +11,6 @@ function formatSize(bytes: number): string {
     return `${(bytes / (1024 * 1024)).toFixed(0)} MB`;
   }
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
-}
-
-// Format time
-function formatTime(dateStr: string): string {
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-  if (diffDays === 0) return "Today";
-  if (diffDays === 1) return "Yesterday";
-  if (diffDays < 7) return `${diffDays} days ago`;
-  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-  return `${Math.floor(diffDays / 30)} months ago`;
 }
 
 // Provider type
@@ -44,11 +25,26 @@ interface ModelSelectorProps {
 }
 
 const ModelSelector: Component<ModelSelectorProps> = (props) => {
+  const { t } = useI18n();
+
+  // Helper for time formatting with translation
+  const formatTimeStr = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return t("modelSelector.time.today");
+    if (diffDays === 1) return t("modelSelector.time.yesterday");
+    if (diffDays < 7) return t("modelSelector.time.daysAgo").replace("{days}", diffDays.toString());
+    if (diffDays < 30) return t("modelSelector.time.weeksAgo").replace("{weeks}", Math.floor(diffDays / 7).toString());
+    return t("modelSelector.time.monthsAgo").replace("{months}", Math.floor(diffDays / 30).toString());
+  };
+
   // Determine current model's provider type
   const getCurrentProviderType = (): ProviderType => {
     const model = AVAILABLE_MODELS.find(m => m.id === props.value);
     if (!model) {
-      // Check if it's an Ollama model (non-preset)
       if (props.value && !props.value.includes("/")) {
         return "ollama";
       }
@@ -65,22 +61,23 @@ const ModelSelector: Component<ModelSelectorProps> = (props) => {
   const [ollamaBaseUrl, _setOllamaBaseUrl] = createSignal("http://localhost:11434");
 
   // Cloud provider categories
-  const cloudProviderCategories = {
+  const cloudProviderCategories = createMemo(() => ({
     official: {
-      name: "Official API",
+      name: t("modelSelector.cloud.official"),
       providers: ["anthropic", "openai", "google", "minimax", "deepseek"]
     },
     aggregator: {
-      name: "Aggregation Services",
+      name: t("modelSelector.cloud.aggregator"),
       providers: ["openrouter", "together", "groq", "siliconflow"]
     }
-  };
+  }));
 
   // Get cloud models grouped by provider
   const cloudModels = createMemo(() => {
     const result: Record<string, { name: string; models: typeof AVAILABLE_MODELS }> = {};
+    const categories = cloudProviderCategories();
 
-    for (const [key, category] of Object.entries(cloudProviderCategories)) {
+    for (const [key, category] of Object.entries(categories)) {
       const models = AVAILABLE_MODELS.filter(m => category.providers.includes(m.provider));
       if (models.length > 0) {
         result[key] = { name: category.name, models };
@@ -94,27 +91,16 @@ const ModelSelector: Component<ModelSelectorProps> = (props) => {
     setOllamaStatus("checking");
     try {
       const baseUrl = ollamaBaseUrl().replace(/\/$/, "");
-      const response = await fetch(`${baseUrl}/api/tags`, {
-        method: "GET",
-        signal: AbortSignal.timeout(5000),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const models = data.models || [];
-        setOllamaModels(models);
-        setOllamaStatus("running");
-      } else {
-        setOllamaStatus("not-running");
-        setOllamaModels([]);
-      }
-    } catch {
+      const models = await getOllamaModels(baseUrl);
+      setOllamaModels(models);
+      setOllamaStatus("running");
+    } catch (error) {
+      console.error("Ollama connection failed:", error);
       setOllamaStatus("not-running");
       setOllamaModels([]);
     }
-  };
+  }
 
-  // Check Ollama status on mount
   onMount(() => {
     checkOllamaStatus();
   });
@@ -151,8 +137,8 @@ const ModelSelector: Component<ModelSelectorProps> = (props) => {
           class={`provider-tab ${providerType() === "cloud" ? "active" : ""}`}
           onClick={() => setProviderType("cloud")}
         >
-          <span class="tab-icon">☁️</span>
-          <span class="tab-label">Cloud</span>
+          <div class="tab-icon"><Icon name="cloud" size={18} /></div>
+          <span class="tab-label">{t("modelSelector.tabs.cloud")}</span>
         </button>
         <button
           class={`provider-tab ${providerType() === "ollama" ? "active" : ""}`}
@@ -161,15 +147,15 @@ const ModelSelector: Component<ModelSelectorProps> = (props) => {
             checkOllamaStatus();
           }}
         >
-          <span class="tab-icon">🦙</span>
-          <span class="tab-label">Ollama</span>
+          <div class="tab-icon"><Icon name="ollama" size={18} /></div>
+          <span class="tab-label">{t("modelSelector.tabs.ollama")}</span>
         </button>
         <button
           class={`provider-tab ${providerType() === "custom" ? "active" : ""}`}
           onClick={() => setProviderType("custom")}
         >
-          <span class="tab-icon">⚙️</span>
-          <span class="tab-label">Custom</span>
+          <div class="tab-icon"><Icon name="settings" size={18} /></div>
+          <span class="tab-label">{t("modelSelector.tabs.custom")}</span>
         </button>
       </div>
 
@@ -177,9 +163,23 @@ const ModelSelector: Component<ModelSelectorProps> = (props) => {
       <Show when={providerType() === "cloud"}>
         <div class="cloud-selector">
           <select
-            value={props.value}
+            value={(() => {
+              const currentVal = props.value;
+              let exists = false;
+              const categories = cloudModels();
+              for (const cat of Object.values(categories)) {
+                if (cat.models.some(m => m.id === currentVal)) {
+                  exists = true;
+                  break;
+                }
+              }
+              return exists ? currentVal : "";
+            })()}
             onChange={(e) => handleCloudModelChange(e.currentTarget.value)}
           >
+            <option value="" disabled selected>
+              {t("modelSelector.selectModel")}
+            </option>
             <For each={Object.entries(cloudModels())}>
               {([_key, categoryData]) => (
                 <optgroup label={categoryData.name}>
@@ -210,19 +210,22 @@ const ModelSelector: Component<ModelSelectorProps> = (props) => {
           {/* Status indicator */}
           <Show when={ollamaStatus() === "checking"}>
             <div class="ollama-status checking">
-              <span class="status-icon">⏳</span>
-              <p>Checking Ollama service...</p>
+              <div class="status-icon"><Icon name="search" size={16} /></div>
+              <p>{t("modelSelector.ollama.checking")}</p>
             </div>
           </Show>
 
           <Show when={ollamaStatus() === "not-running"}>
             <div class="ollama-status not-running">
-              <span class="status-icon">⚠️</span>
+              <div class="status-icon"><Icon name="command" size={16} /></div>
               <div class="status-content">
-                <p><strong>Ollama not running</strong></p>
-                <p>Please install and start <a href="https://ollama.ai" target="_blank">Ollama</a></p>
+                <p><strong>{t("modelSelector.ollama.notRunning.title")}</strong></p>
+                <p>
+                  {t("modelSelector.ollama.notRunning.desc")}{" "}
+                  <a href="https://ollama.ai" target="_blank">Ollama</a>
+                </p>
                 <button class="retry-btn" onClick={checkOllamaStatus}>
-                  Retry
+                  {t("modelSelector.ollama.notRunning.retry")}
                 </button>
               </div>
             </div>
@@ -230,17 +233,21 @@ const ModelSelector: Component<ModelSelectorProps> = (props) => {
 
           <Show when={ollamaStatus() === "running"}>
             <div class="ollama-status running">
-              <span class="status-icon">✅</span>
-              <p>Ollama running · {ollamaModels().length} models</p>
+              <div class="status-icon"><Icon name="docker" size={16} /></div>
+              <p>{t("modelSelector.ollama.running").replace("{count}", ollamaModels().length.toString())}</p>
               <button class="refresh-btn" onClick={checkOllamaStatus}>
-                Refresh
+                {t("modelSelector.ollama.refresh")}
               </button>
             </div>
 
             <Show when={ollamaModels().length === 0}>
               <div class="no-models">
-                <p>No models installed</p>
-                <p class="hint">Run <code>ollama pull llama3.2</code> to install a model</p>
+                <p>{t("modelSelector.ollama.noModels.title")}</p>
+                <p class="hint">
+                  {t("modelSelector.ollama.noModels.hint").split("{command}")[0]}
+                  <code>ollama pull llama3.2</code>
+                  {t("modelSelector.ollama.noModels.hint").split("{command}")[1]}
+                </p>
               </div>
             </Show>
 
@@ -257,7 +264,9 @@ const ModelSelector: Component<ModelSelectorProps> = (props) => {
                         <span class="model-size">{formatSize(model.size)}</span>
                       </div>
                       <div class="model-meta">
-                        <span class="model-time">Updated {formatTime(model.modified_at)}</span>
+                        <span class="model-time">
+                          {t("modelSelector.ollama.modelInfo.updated").replace("{time}", formatTimeStr(model.modified_at))}
+                        </span>
                       </div>
                     </div>
                   )}
@@ -269,7 +278,7 @@ const ModelSelector: Component<ModelSelectorProps> = (props) => {
           {/* Current selected model */}
           <Show when={selectedOllamaModel()}>
             <div class="selected-model-info">
-              <span class="label">Current model:</span>
+              <span class="label">{t("modelSelector.ollama.modelInfo.label")}</span>
               <span class="value">{selectedOllamaModel()?.name}</span>
             </div>
           </Show>
@@ -280,21 +289,21 @@ const ModelSelector: Component<ModelSelectorProps> = (props) => {
       <Show when={providerType() === "custom"}>
         <div class="custom-section">
           <div class="custom-notice">
-            <span class="notice-icon">🔧</span>
-            <p>Use OpenAI-compatible API service (vLLM / TGI / SGLang, etc.)</p>
+            <div class="notice-icon"><Icon name="settings" size={20} /></div>
+            <p>{t("modelSelector.custom.notice")}</p>
           </div>
 
           <div class="custom-form">
             <div class="form-group">
-              <label>Model ID</label>
+              <label>{t("modelSelector.custom.modelId")}</label>
               <input
                 type="text"
                 value={props.value === "custom-model" ? "" : props.value}
-                placeholder="e.g., meta-llama/Llama-3.2-8B"
+                placeholder={t("modelSelector.custom.placeholder")}
                 onInput={(e) => props.onChange(e.currentTarget.value || "custom-model")}
               />
             </div>
-            <p class="hint">Configure API URL and key in Settings</p>
+            <p class="hint">{t("modelSelector.custom.hint")}</p>
           </div>
         </div>
       </Show>

@@ -1,5 +1,7 @@
 import { Component, For } from "solid-js";
 import { useChat } from "../stores/chat";
+import { useI18n } from "../stores/i18n";
+import Icon from "./Icon";
 import "./Sidebar.css";
 
 interface SidebarProps {
@@ -9,6 +11,7 @@ interface SidebarProps {
 }
 
 const Sidebar: Component<SidebarProps> = (props) => {
+  const { t } = useI18n();
   const {
     conversations,
     activeConversationId,
@@ -29,17 +32,19 @@ const Sidebar: Component<SidebarProps> = (props) => {
             class={`mode-tab ${props.mode === "chat" ? "active" : ""}`}
             onClick={() => props.onModeChange("chat")}
           >
-            Chat
+            <Icon name="chat" size={16} />
+            {t("sidebar.chat")}
           </button>
           <button
             class={`mode-tab ${props.mode === "agent" ? "active" : ""}`}
             onClick={() => props.onModeChange("agent")}
           >
-            Agent
+            <Icon name="agent" size={16} />
+            {t("sidebar.agent")}
           </button>
         </div>
         <button class="new-chat-btn" onClick={() => createConversation()}>
-          + New Chat
+          <Icon name="plus" size={16} /> {t("sidebar.newChat")}
         </button>
       </div>
 
@@ -47,9 +52,8 @@ const Sidebar: Component<SidebarProps> = (props) => {
         <For each={conversations()}>
           {(conv) => (
             <div
-              class={`conversation-item ${
-                conv.id === activeConversationId() ? "active" : ""
-              }`}
+              class={`conversation-item ${conv.id === activeConversationId() ? "active" : ""
+                }`}
               onClick={() => selectConversation(conv.id)}
             >
               <span class="conversation-title">{conv.title}</span>
@@ -60,7 +64,7 @@ const Sidebar: Component<SidebarProps> = (props) => {
                   deleteConversation(conv.id);
                 }}
               >
-                x
+                <Icon name="close" size={12} />
               </button>
             </div>
           )}
@@ -75,7 +79,8 @@ const Sidebar: Component<SidebarProps> = (props) => {
             console.log("Skills Manager clicked - coming soon");
           }}
         >
-          Skills
+          <Icon name="skills" size={16} />
+          {t("sidebar.skills")}
         </button>
         <button
           class="footer-btn primary-btn"
@@ -84,10 +89,12 @@ const Sidebar: Component<SidebarProps> = (props) => {
             console.log("MCPs clicked - coming soon");
           }}
         >
-          MCPs
+          <Icon name="server" size={16} />
+          {t("sidebar.mcps")}
         </button>
         <button class="footer-btn primary-btn" onClick={props.onSettingsClick}>
-          Settings
+          <Icon name="settings" size={16} />
+          {t("sidebar.settings")}
         </button>
       </div>
     </aside>

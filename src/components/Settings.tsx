@@ -1,11 +1,14 @@
-import { Component, createSignal, createMemo, Show } from "solid-js";
+import { Component, createSignal, createMemo, Show, For } from "solid-js";
 import { useSettings, AVAILABLE_MODELS, PROVIDER_PRESETS, getProviderFromModel } from "../stores/settings";
 import { testConnection } from "../lib/tauri-api";
+import { useI18n, SUPPORTED_LOCALES, Locale } from "../stores/i18n";
 import ModelSelector from "./ModelSelector";
+import Icon from "./Icon";
 import "./Settings.css";
 
 const Settings: Component = () => {
   const { settings, updateSetting, toggleSettings } = useSettings();
+  const { t, locale, setLocale } = useI18n();
   const [testing, setTesting] = createSignal(false);
   const [testResult, setTestResult] = createSignal<string | null>(null);
 
@@ -58,7 +61,7 @@ const Settings: Component = () => {
     } catch (e) {
       console.error("Test connection error:", e);
       const errorMsg = e instanceof Error ? e.message : String(e);
-      setTestResult(`Error: ${errorMsg}`);
+      setTestResult(`${t("common.error")}: ${errorMsg}`);
     }
     setTesting(false);
   };
@@ -72,19 +75,33 @@ const Settings: Component = () => {
   return (
     <div class="settings">
       <div class="settings-header">
-        <h2>Settings</h2>
-        <button class="close-btn" onClick={toggleSettings}>
-          Close
+        <h2>{t("settings.title")}</h2>
+        <button class="header-close-btn" onClick={toggleSettings}>
+          <Icon name="close" size={24} />
         </button>
       </div>
 
       <div class="settings-content">
         <div class="settings-section">
-          <h3>Model Selection</h3>
+          <h3>{t("settings.language")}</h3>
+          <div class="form-group">
+            <select
+              value={locale()}
+              onChange={(e) => setLocale(e.currentTarget.value as Locale)}
+            >
+              <For each={Object.entries(SUPPORTED_LOCALES)}>
+                {([key, label]) => <option value={key}>{label}</option>}
+              </For>
+            </select>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>{t("settings.modelSelection")}</h3>
 
           <ModelSelector
             value={settings().model}
-            onChange={(modelId, baseUrl) => {
+            onChange={(modelId: string, baseUrl?: string) => {
               updateSetting("model", modelId);
               if (baseUrl) {
                 updateSetting("baseUrl", baseUrl);
@@ -94,15 +111,15 @@ const Settings: Component = () => {
         </div>
 
         <div class="settings-section">
-          <h3>API Configuration</h3>
+          <h3>{t("settings.apiConfiguration")}</h3>
 
           {/* Local service notice - only for providers that truly don't need auth */}
           <Show when={isNoAuthProvider()}>
             <div class="local-service-notice">
-              <span class="notice-icon">🏠</span>
+              <div class="notice-icon"><Icon name="home" size={20} /></div>
               <div class="notice-content">
-                <strong>Local Service - No API Key Required</strong>
-                <p>Please ensure {currentProviderInfo()?.name} is running locally</p>
+                <strong>{t("settings.localService.title")}</strong>
+                <p>{t("settings.localService.desc").replace("{name}", currentProviderInfo()?.name || "Service")}</p>
               </div>
             </div>
           </Show>
@@ -111,9 +128,9 @@ const Settings: Component = () => {
           <Show when={!isNoAuthProvider()}>
             <div class="form-group">
               <label for="apiKey">
-                API Key
+                {t("settings.apiKey.label")}
                 <Show when={isApiKeyOptional()}>
-                  <span class="optional-tag">(Optional)</span>
+                  <span class="optional-tag">{t("settings.apiKey.optional")}</span>
                 </Show>
               </label>
               <input
@@ -121,7 +138,7 @@ const Settings: Component = () => {
                 type="password"
                 value={settings().apiKey}
                 onInput={(e) => updateSetting("apiKey", e.currentTarget.value)}
-                placeholder={currentProviderInfo()?.authType === "bearer" ? "sk-..." : "your-api-key"}
+                placeholder={currentProviderInfo()?.authType === "bearer" ? "sk-..." : t("settings.apiKey.placeholder")}
               />
               <span class="hint">
                 <Show
@@ -129,13 +146,13 @@ const Settings: Component = () => {
                   fallback={
                     <Show
                       when={isApiKeyOptional()}
-                      fallback={<>Get API Key from {currentProviderInfo()?.name}</>}
+                      fallback={<>{t("settings.apiKey.get")} {currentProviderInfo()?.name}</>}
                     >
-                      API key is optional for custom endpoints
+                      {t("settings.apiKey.customOptional")}
                     </Show>
                   }
                 >
-                  Get your API key from{" "}
+                  {t("settings.apiKey.get")}{" "}
                   <a href="https://console.anthropic.com/settings/keys" target="_blank">
                     Anthropic Console
                   </a>
@@ -145,7 +162,7 @@ const Settings: Component = () => {
           </Show>
 
           <div class="form-group">
-            <label for="baseUrl">API Base URL</label>
+            <label for="baseUrl">{t("settings.baseUrl.label")}</label>
             <input
               id="baseUrl"
               type="text"
@@ -155,8 +172,8 @@ const Settings: Component = () => {
             />
             <span class="hint">
               {isNoAuthProvider()
-                ? "Ensure the address matches your local service configuration"
-                : "Customize proxy or compatible API address"}
+                ? t("settings.baseUrl.hintLocal")
+                : t("settings.baseUrl.hintCustom")}
             </span>
           </div>
 
@@ -164,8 +181,8 @@ const Settings: Component = () => {
           <Show when={currentProviderInfo()?.id === "openai"}>
             <div class="form-group">
               <label for="openaiOrg">
-                Organization ID
-                <span class="optional-tag">(Optional)</span>
+                {t("settings.openai.orgId")}
+                <span class="optional-tag">{t("settings.apiKey.optional")}</span>
               </label>
               <input
                 id="openaiOrg"
@@ -175,14 +192,14 @@ const Settings: Component = () => {
                 placeholder="org-..."
               />
               <span class="hint">
-                Your OpenAI organization ID (if you belong to multiple organizations)
+                {t("settings.openai.orgHint")}
               </span>
             </div>
 
             <div class="form-group">
               <label for="openaiProject">
-                Project ID
-                <span class="optional-tag">(Optional)</span>
+                {t("settings.openai.projectId")}
+                <span class="optional-tag">{t("settings.apiKey.optional")}</span>
               </label>
               <input
                 id="openaiProject"
@@ -192,13 +209,13 @@ const Settings: Component = () => {
                 placeholder="proj_..."
               />
               <span class="hint">
-                Your OpenAI project ID (for project-level access control)
+                {t("settings.openai.projectHint")}
               </span>
             </div>
           </Show>
 
           <div class="form-group">
-            <label for="maxTokens">Max Tokens</label>
+            <label for="maxTokens">{t("settings.maxTokens")}</label>
             <input
               id="maxTokens"
               type="number"
@@ -217,10 +234,10 @@ const Settings: Component = () => {
               onClick={handleTest}
               disabled={testing() || (!isNoAuthProvider() && !isApiKeyOptional() && !settings().apiKey)}
             >
-              {testing() ? "Testing..." : "Test Connection"}
+              {testing() ? t("settings.test.testing") : t("settings.test.button")}
             </button>
             {testResult() === "success" && (
-              <span class="test-success">✓ Connection successful!</span>
+              <span class="test-success">{t("settings.test.success")}</span>
             )}
             {testResult() && testResult() !== "success" && (
               <span class="test-error">{testResult()}</span>
@@ -229,11 +246,11 @@ const Settings: Component = () => {
         </div>
 
         <div class="settings-section">
-          <h3>Data Storage</h3>
+          <h3>{t("settings.dataStorage.title")}</h3>
           <p class="hint" style={{ margin: 0 }}>
-            All data is stored locally on your computer in SQLite database.
+            {t("settings.dataStorage.desc1")}
             <br />
-            API key is securely stored and never sent to any server except Anthropic's API.
+            {t("settings.dataStorage.desc2")}
           </p>
         </div>
       </div>

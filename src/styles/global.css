@@ -52,6 +52,22 @@
   --radius-xl: 18px;
   --radius-full: 9999px;
 
+  /* Typography */
+  --text-xs: 0.75rem;
+  /* 10.5px */
+  --text-sm: 0.875rem;
+  /* 12.25px */
+  --text-base: 1rem;
+  /* 14px */
+  --text-lg: 1.125rem;
+  /* 15.75px */
+  --text-xl: 1.25rem;
+  /* 17.5px */
+  --text-2xl: 1.5rem;
+  /* 21px */
+  --text-3xl: 1.875rem;
+  /* 26.25px */
+
   /* Transitions */
   --transition-fast: 0.15s ease;
   --transition-base: 0.2s ease;
@@ -97,7 +113,12 @@ body {
   letter-spacing: -0.01em;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: 'Instrument Serif', Georgia, serif;
   font-weight: 400;
   color: var(--foreground);
@@ -179,7 +200,9 @@ button.ghost:hover {
 }
 
 /* Input Styles */
-input, textarea, select {
+input,
+textarea,
+select {
   background: var(--card);
   border: 1px solid var(--border);
   color: var(--foreground);
@@ -191,13 +214,16 @@ input, textarea, select {
   transition: all var(--transition-base);
 }
 
-input:focus, textarea:focus, select:focus {
+input:focus,
+textarea:focus,
+select:focus {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 3px var(--accent);
 }
 
-input::placeholder, textarea::placeholder {
+input::placeholder,
+textarea::placeholder {
   color: var(--muted-foreground);
 }
 
@@ -264,21 +290,45 @@ a:hover {
 
 /* Animations */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 1; }
+
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+
+  50% {
+    opacity: 1;
+  }
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }

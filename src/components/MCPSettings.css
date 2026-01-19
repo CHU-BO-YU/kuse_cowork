@@ -25,7 +25,9 @@
   gap: 10px;
 }
 
-.add-btn, .refresh-btn, .close-btn {
+.add-btn,
+.refresh-btn,
+.close-btn {
   padding: 8px 16px;
   border: none;
   border-radius: 6px;
@@ -64,6 +66,27 @@
 
 .close-btn:hover {
   background: #c82333;
+}
+
+.header-close-btn {
+  background: transparent;
+  border: none;
+  color: #6c757d;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.header-close-btn:hover {
+  background: #e9ecef;
+  color: #333;
 }
 
 .mcp-settings-content {
@@ -116,7 +139,8 @@
   margin-top: 20px;
 }
 
-.save-btn, .cancel-btn {
+.save-btn,
+.cancel-btn {
   padding: 10px 20px;
   border: none;
   border-radius: 6px;
@@ -313,7 +337,9 @@
   flex-wrap: wrap;
 }
 
-.toggle-btn, .edit-btn, .delete-btn {
+.toggle-btn,
+.edit-btn,
+.delete-btn {
   padding: 6px 12px;
   border: none;
   border-radius: 4px;
