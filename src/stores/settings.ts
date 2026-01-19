@@ -228,8 +228,34 @@ const DEFAULT_SETTINGS: Settings = {
 
 // Get provider ID from model
 export function getProviderFromModel(modelId: string): string {
+  // First check if model is in the preset list
   const model = AVAILABLE_MODELS.find(m => m.id === modelId);
-  return model?.provider || "anthropic";
+  if (model?.provider) {
+    return model.provider;
+  }
+
+  // Infer provider from model name pattern (same logic as backend)
+  const modelLower = modelId.toLowerCase();
+
+  // OpenRouter format (contains slash with known prefix)
+  if (modelLower.startsWith("anthropic/") || modelLower.startsWith("openai/") || 
+      modelLower.startsWith("meta-llama/") || modelLower.startsWith("deepseek/")) {
+    return "openrouter";
+  }
+
+  // Ollama format (contains colon, e.g., llama3.3:latest, qwen3-vl:8b)
+  if (modelId.includes(":")) {
+    return "ollama";
+  }
+
+  // Official providers by model name
+  if (modelLower.includes("claude")) return "anthropic";
+  if (modelLower.includes("gpt") || modelLower.startsWith("o1") || modelLower.startsWith("o3")) return "openai";
+  if (modelLower.includes("gemini")) return "google";
+  if (modelLower.includes("minimax")) return "minimax";
+
+  // Default to anthropic
+  return "anthropic";
 }
 
 // Check if a model uses the OpenAI Responses API (GPT-5 series)

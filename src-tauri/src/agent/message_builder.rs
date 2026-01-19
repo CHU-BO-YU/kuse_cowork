@@ -65,10 +65,19 @@ impl MessageBuilder {
 
         let api_messages = self.convert_messages(messages);
 
+        // Build system prompt with project path info
+        let mut system = self.config.system_prompt.clone();
+        if let Some(ref project_path) = self.config.project_path {
+            system.push_str(&format!(
+                "\n\n## Current Working Directory\nThe user has specified this project path: `{}`\nWhen using tools like list_dir, read_file, write_file, etc., use this directory as the default working directory. If no path is specified in tool inputs, the tools will automatically use this directory.\nIMPORTANT: Always work within this directory unless the user explicitly asks for a different location.",
+                project_path
+            ));
+        }
+
         ClaudeApiRequest {
             model: self.model.clone(),
             max_tokens: self.max_tokens,
-            system: self.config.system_prompt.clone(),
+            system,
             messages: api_messages,
             tools,
             temperature: self.temperature,

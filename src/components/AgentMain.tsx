@@ -1,4 +1,5 @@
 import { Component, Show, For, createSignal } from "solid-js";
+import Markdown from "./Markdown";
 import { Task, TaskMessage, openMultipleFoldersDialog } from "../lib/tauri-api";
 import { useSettings } from "../stores/settings";
 import "./AgentMain.css";
@@ -106,7 +107,9 @@ const AgentMain: Component<AgentMainProps> = (props) => {
                     <div class="message-label">
                       {message.role === "user" ? "You" : "Agent"}
                     </div>
-                    <div class="message-content">{message.content}</div>
+                    <div class="message-content">
+                      <Markdown>{message.content}</Markdown>
+                    </div>
                   </div>
                 )}
               </For>
@@ -115,7 +118,9 @@ const AgentMain: Component<AgentMainProps> = (props) => {
               <Show when={props.currentText && props.isRunning}>
                 <div class="message assistant streaming">
                   <div class="message-label">Agent</div>
-                  <div class="message-content">{props.currentText}</div>
+                  <div class="message-content">
+                    <Markdown>{props.currentText}</Markdown>
+                  </div>
                 </div>
               </Show>
             </Show>

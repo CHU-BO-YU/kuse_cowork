@@ -408,15 +408,21 @@ impl AgentLoop {
             "messages": messages
         });
 
-        // Use correct max tokens parameter based on model
+        // Use correct max tokens parameter based on provider and model
+        // max_completion_tokens is ONLY for official OpenAI new models (gpt-4o, gpt-4-turbo, o1, o3, gpt-5)
+        // All OpenAI-compatible services (Ollama, vLLM, LM Studio, etc.) use max_tokens
         let model_lower = request.model.to_lowercase();
-        let is_legacy = model_lower.contains("gpt-3.5")
-            || (model_lower.contains("gpt-4") && !model_lower.contains("gpt-4o") && !model_lower.contains("gpt-4-turbo"));
+        let is_official_openai_new_model = matches!(self.provider_config.api_format, ApiFormat::OpenAI)
+            && (model_lower.contains("gpt-4o") 
+                || model_lower.contains("gpt-4-turbo") 
+                || model_lower.starts_with("o1") 
+                || model_lower.starts_with("o3") 
+                || model_lower.starts_with("gpt-5"));
 
-        if is_legacy {
-            openai_request["max_tokens"] = serde_json::json!(request.max_tokens);
-        } else {
+        if is_official_openai_new_model {
             openai_request["max_completion_tokens"] = serde_json::json!(request.max_tokens);
+        } else {
+            openai_request["max_tokens"] = serde_json::json!(request.max_tokens);
         }
 
         // Only add temperature for non-reasoning models (o1, o3, gpt-5 don't support custom temperature)

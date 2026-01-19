@@ -119,7 +119,7 @@ impl Default for AgentConfig {
     }
 }
 
-pub const DEFAULT_SYSTEM_PROMPT: &str = r#"You are Kuse Cowork, an AI agent that helps users with software development tasks.
+pub const DEFAULT_SYSTEM_PROMPT: &str = r#"You are Kuse Cowork, an AI agent that helps users with various tasks.
 
 You have access to tools that allow you to read and write files, execute commands, and search through codebases.
 
