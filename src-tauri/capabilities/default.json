@@ -1,14 +1,27 @@
 {
-  "$schema": "https://schema.tauri.app/config/2/capability",
   "identifier": "default",
   "description": "Default capabilities for Kuse Cowork",
-  "windows": ["main"],
+  "windows": [
+    "main"
+  ],
   "permissions": [
     "core:default",
     "core:event:default",
     "core:event:allow-listen",
     "core:event:allow-emit",
     "shell:allow-open",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "name": "ollama",
+          "cmd": "ollama",
+          "args": [
+            "serve"
+          ]
+        }
+      ]
+    },
     "dialog:default",
     "dialog:allow-open"
   ]

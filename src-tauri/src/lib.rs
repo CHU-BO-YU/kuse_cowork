@@ -7,6 +7,7 @@ mod mcp;
 mod skills;
 mod tools;
 
+use agent::backup::BackupManager;
 use commands::AppState;
 use mcp::MCPManager;
 use std::sync::Arc;
@@ -25,12 +26,16 @@ pub fn run() {
     let mcp_manager = Arc::new(MCPManager::new());
     let db_arc = Arc::new(db);
 
+    // Initialize Backup Manager
+    let backup_manager = Arc::new(BackupManager::new());
+
     // Auto-connect enabled MCP servers will be done in the tauri app setup
 
     let app_state = Arc::new(AppState {
         db: db_arc,
         claude_client: Mutex::new(None),
         mcp_manager,
+        backup_manager,
     });
 
     tauri::Builder::default()
@@ -66,6 +71,7 @@ pub fn run() {
             commands::get_mcp_server_statuses,
             commands::execute_mcp_tool,
             commands::get_ollama_models,
+            commands::undo_last_action,
         ])
         .setup(|app| {
             #[cfg(debug_assertions)]
@@ -75,6 +81,22 @@ pub fn run() {
                 }
             }
 
+            // Auto-start Ollama serve (Windows only recommended for GPU)
+            #[cfg(target_os = "windows")]
+            {
+               use tauri_plugin_shell::ShellExt;
+               let shell = app.shell();
+               let output = shell.command("ollama")
+                   .args(["serve"])
+                   .env("OLLAMA_CONTEXT_LENGTH", "16384") // Increase context window to 16k
+                   .spawn();
+
+               match output {
+                   Ok((_pid, _child)) => println!("Auto-started Ollama serve process"),
+                   Err(e) => eprintln!("Failed to start Ollama serve (it might be running already): {}", e),
+               }
+            }
+            
             // Auto-connect enabled MCP servers
             let app_state = app.state::<Arc<AppState>>();
             let db = app_state.db.clone();
