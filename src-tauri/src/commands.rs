@@ -1,4 +1,5 @@
-use crate::agent::{AgentConfig, AgentContent, AgentEvent, AgentLoop, AgentMessage};
+use crate::agent::{AgentConfig, AgentContent, AgentEvent, AgentLoop, AgentMessage, ContentBlock};
+use crate::agent::backup::BackupManager;
 use crate::claude::{ClaudeClient, Message as ClaudeMessage};
 use crate::database::{Conversation, Database, Message, PlanStep, Settings, Task, TaskMessage};
 use crate::mcp::{MCPManager, MCPServerConfig, MCPServerStatus, MCPToolCall, MCPToolResult};
@@ -12,6 +13,7 @@ pub struct AppState {
     pub db: Arc<Database>,
     pub claude_client: Mutex<Option<ClaudeClient>>,
     pub mcp_manager: Arc<MCPManager>,
+    pub backup_manager: Arc<BackupManager>,
 }
 
 #[derive(Debug, Serialize)]
@@ -421,6 +423,8 @@ pub async fn run_agent(
         Some(settings.temperature),
         state.mcp_manager.clone(),
         Some(&provider_id),
+        Some(state.backup_manager.clone()),
+        None,
     );
 
     // Create channel for events
@@ -565,7 +569,9 @@ pub async fn send_chat_with_tools(
     use crate::llm_client::ProviderConfig;
 
     let tool_executor = ToolExecutor::new(request.project_path.clone())
-        .with_mcp_manager(state.mcp_manager.clone());
+        .with_mcp_manager(state.mcp_manager.clone())
+        .with_backup_manager(state.backup_manager.clone())
+        .with_conversation_id(request.conversation_id.clone());
 
     // Build agent-style config for tools
     let mut config = AgentConfig {
@@ -1175,14 +1181,22 @@ pub async fn run_task_agent(
         Some(settings.temperature),
         state.mcp_manager.clone(),
         Some(&provider_id),
+        Some(state.backup_manager.clone()),
+        Some(request.task_id.clone()),
     );
 
-    // Build conversation history from existing messages
+    // Build conversation history from existing messages, parsing JSON if possible
     let mut agent_messages: Vec<AgentMessage> = existing_messages
         .iter()
-        .map(|m| AgentMessage {
-            role: m.role.clone(),
-            content: AgentContent::Text(m.content.clone()),
+        .map(|m| {
+            let content = match serde_json::from_str::<AgentContent>(&m.content) {
+                Ok(c) => c,
+                Err(_) => AgentContent::Text(m.content.clone()),
+            };
+            AgentMessage {
+                role: m.role.clone(),
+                content,
+            }
         })
         .collect();
 
@@ -1197,25 +1211,85 @@ pub async fn run_task_agent(
 
     // Clone state for event handler
     let task_id = request.task_id.clone();
-    let task_id_for_msg = request.task_id.clone();
     let db = state.db.clone();
-    let db_for_msg = state.db.clone();
 
-    // Track accumulated text for saving
-    let accumulated_text = std::sync::Arc::new(std::sync::Mutex::new(String::new()));
-    let accumulated_text_clone = accumulated_text.clone();
-
+    // Track state for saving structured messages and smooth streaming
+    let history_text = std::sync::Arc::new(std::sync::Mutex::new(String::new()));
+    let current_turn_text = std::sync::Arc::new(std::sync::Mutex::new(String::new()));
+    let history_text_clone = history_text.clone();
+    let current_turn_text_clone = current_turn_text.clone();
+    
     // Spawn event emitter with task tracking
     let window_clone = window.clone();
     let emit_task = tokio::spawn(async move {
+        let mut turn_tool_uses = Vec::new();
         while let Some(event) = rx.recv().await {
+            let mut event_to_emit = event.clone();
+
             // Track plan and step updates in database
             match &event {
                 AgentEvent::Text { content } => {
-                    // Update accumulated text
-                    if let Ok(mut text) = accumulated_text_clone.lock() {
-                        *text = content.clone();
+                    let mut current = current_turn_text_clone.lock().unwrap();
+                    *current = content.clone();
+                    
+                    // For streaming UI, combine history and current turn text
+                    let history = history_text_clone.lock().unwrap();
+                    let full_streaming_text = if history.is_empty() {
+                        content.clone()
+                    } else {
+                        format!("{}\n\n{}", *history, content)
+                    };
+                    event_to_emit = AgentEvent::Text { content: full_streaming_text };
+                }
+                AgentEvent::ToolStart { tool, input } => {
+                    // Record tool use for structured saving
+                    turn_tool_uses.push(ContentBlock::ToolUse {
+                        id: format!("tc_{}", uuid::Uuid::new_v4()),
+                        name: tool.clone(),
+                        input: input.clone(),
+                        thought_signature: None,
+                    });
+                }
+                AgentEvent::TurnComplete { .. } | AgentEvent::Done { .. } => {
+                    // 1. Move current turn text to history buffer for smooth streaming
+                    let mut current = current_turn_text_clone.lock().unwrap();
+                    let mut history = history_text_clone.lock().unwrap();
+                    
+                    if !current.is_empty() {
+                        if !history.is_empty() {
+                            history.push_str("\n\n");
+                        }
+                        history.push_str(&current);
                     }
+
+                    // 2. Save assistant message (structured if it had tool uses) independently in DB
+                    if !current.is_empty() || !turn_tool_uses.is_empty() {
+                        let content = if turn_tool_uses.is_empty() {
+                            AgentContent::Text(current.clone())
+                        } else {
+                            let mut blocks = Vec::new();
+                            if !current.is_empty() {
+                                blocks.push(ContentBlock::Text { text: current.clone() });
+                            }
+                            blocks.extend(turn_tool_uses.drain(..));
+                            AgentContent::Blocks(blocks)
+                        };
+                        
+                        let content_json = serde_json::to_string(&content).unwrap_or_else(|_| current.clone());
+                        let _ = db.add_task_message(&uuid::Uuid::new_v4().to_string(), &task_id, "assistant", &content_json);
+                    }
+                    
+                    current.clear();
+
+                    if let AgentEvent::Done { .. } = event {
+                        let _ = db.update_task_status(&task_id, "completed");
+                    }
+                }
+                AgentEvent::ToolResults { results } => {
+                    // Save tool results as a 'user' message in DB for AI context
+                    let content = AgentContent::ToolResults(results.clone());
+                    let content_json = serde_json::to_string(&content).unwrap_or_default();
+                    let _ = db.add_task_message(&uuid::Uuid::new_v4().to_string(), &task_id, "user", &content_json);
                 }
                 AgentEvent::Plan { steps } => {
                     let plan_steps: Vec<PlanStep> = steps.iter().map(|s| PlanStep {
@@ -1231,17 +1305,16 @@ pub async fn run_task_agent(
                 AgentEvent::StepDone { step } => {
                     let _ = db.update_task_step(&task_id, *step, "completed");
                 }
-                AgentEvent::Done { .. } => {
-                    let _ = db.update_task_status(&task_id, "completed");
-                }
-                AgentEvent::Error { .. } => {
+                AgentEvent::Error { message } => {
                     let _ = db.update_task_status(&task_id, "failed");
+                    let msg_id = uuid::Uuid::new_v4().to_string();
+                    let _ = db.add_task_message(&msg_id, &task_id, "error", message);
                 }
                 _ => {}
             }
 
-            // Emit to frontend
-            let _ = window_clone.emit("agent-event", &event);
+            // Emit to frontend (streaming text is already updated in match)
+            let _ = window_clone.emit("agent-event", &event_to_emit);
         }
     });
 
@@ -1251,22 +1324,13 @@ pub async fn run_task_agent(
     // Wait for emitter to finish
     let _ = emit_task.await;
 
-    // Save assistant message with accumulated text
-    let final_text = accumulated_text.lock().map(|t| t.clone()).unwrap_or_default();
-    if !final_text.is_empty() {
-        let assistant_msg_id = uuid::Uuid::new_v4().to_string();
-        let _ = db_for_msg.add_task_message(&assistant_msg_id, &task_id_for_msg, "assistant", &final_text);
-    }
-
     // Always ensure task status is updated at the end
     match result {
         Ok(_messages) => {
-            // Explicitly update to completed (in case event was missed)
-            let _ = state.db.update_task_status(&request.task_id, "completed");
             Ok("Task completed successfully".to_string())
         }
         Err(e) => {
-            state.db.update_task_status(&request.task_id, "failed")?;
+            let _ = state.db.update_task_status(&request.task_id, "failed");
             Err(CommandError { message: e })
         }
     }
@@ -1618,4 +1682,14 @@ fn convert_to_google_format(
     }
 
     google_request
+}
+
+// Undo Command
+#[command]
+pub fn undo_last_action(
+    state: State<'_, Arc<AppState>>,
+    conversation_id: String,
+) -> Result<String, CommandError> {
+    state.backup_manager.undo_last(&conversation_id)
+        .map_err(|e| CommandError { message: e })
 }

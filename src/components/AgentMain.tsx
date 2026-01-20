@@ -1,7 +1,7 @@
 import { Component, Show, For, createSignal, onMount, onCleanup, createEffect } from "solid-js";
 import Markdown from "./Markdown";
 import Icon from "./Icon";
-import { Task, TaskMessage, openMultipleFoldersDialog } from "../lib/tauri-api";
+import { Task, TaskMessage, openMultipleFoldersDialog, undoLastAction } from "../lib/tauri-api";
 import { useSettings } from "../stores/settings";
 import { useI18n } from "../stores/i18n";
 import "./AgentMain.css";
@@ -18,7 +18,7 @@ interface AgentMainProps {
 }
 
 const AgentMain: Component<AgentMainProps> = (props) => {
-  const { isConfigured, toggleSettings } = useSettings();
+  const { isConfigured, toggleSettings, settings } = useSettings();
   const { t } = useI18n();
   const [input, setInput] = createSignal("");
   const [selectedPaths, setSelectedPaths] = createSignal<string[]>([]);
@@ -61,6 +61,17 @@ const AgentMain: Component<AgentMainProps> = (props) => {
 
   const handleRemovePath = (path: string) => {
     setSelectedPaths(selectedPaths().filter(p => p !== path));
+  };
+
+  const handleUndo = async () => {
+    if (!props.activeTask) return;
+    try {
+      const result = await undoLastAction(props.activeTask.id);
+      console.log("Undo result:", result);
+      // TODO: Show toast notification
+    } catch (error) {
+      console.error("Undo failed:", error);
+    }
   };
 
   const handleSubmit = (e: Event) => {
@@ -136,18 +147,79 @@ const AgentMain: Component<AgentMainProps> = (props) => {
             >
               <div class="messages">
                 {/* Show saved message history */}
-                <For each={props.messages}>
-                  {(message) => (
-                    <div class={`message ${message.role}`}>
-                      <div class="message-label">
-                        {message.role === "user" ? "You" : "Agent"}
-                      </div>
-                      <div class="message-content">
-                        <Markdown>{message.content}</Markdown>
-                      </div>
-                    </div>
-                  )}
-                </For>
+                {(() => {
+                  const filteredMessages = props.messages.filter(m => {
+                    // Hide messages that are purely tool results (user role)
+                    if (m.role === "user") {
+                      try {
+                        const content = JSON.parse(m.content);
+                        // Handle untagged ToolResults: likely an array where elements might be tool results
+                        // Format: [{"type":"tool_result", ...}] or {"ToolResults":...} (if tagged)
+                        if (Array.isArray(content) && content.length > 0) {
+                          if (content[0].type === "tool_result") return false;
+                        }
+                        if (content.ToolResults) return false;
+                      } catch (e) { }
+                    }
+                    return true;
+                  });
+
+                  // Group consecutive agent messages
+                  const grouped: { role: string; content: string }[] = [];
+                  filteredMessages.forEach(m => {
+                    let displayContent = m.content;
+                    try {
+                      // Try to parse structured content
+                      const parsed = JSON.parse(m.content);
+
+                      if (typeof parsed === "string") {
+                        displayContent = parsed;
+                      } else if (Array.isArray(parsed) && parsed.length > 0) {
+                        // Handle blocks: [{"type": "text", ...}]
+                        const textBlocks = parsed
+                          .filter((b: any) => b.type === "text")
+                          .map((b: any) => b.text);
+
+                        if (textBlocks.length > 0) {
+                          displayContent = textBlocks.join("\n\n");
+                        } else {
+                          // Only tool uses or other blocks, hide or empty
+                          return;
+                        }
+                      } else if (parsed.Text) {
+                        displayContent = parsed.Text;
+                      } else if (parsed.Blocks) {
+                        displayContent = parsed.Blocks
+                          .filter((b: any) => b.type === "text")
+                          .map((b: any) => b.text)
+                          .join("\n\n");
+                      }
+                    } catch (e) { }
+
+                    if (!displayContent || !displayContent.trim()) return;
+
+                    if (grouped.length > 0 && grouped[grouped.length - 1].role === m.role && m.role === "assistant") {
+                      grouped[grouped.length - 1].content += "\n\n" + displayContent;
+                    } else {
+                      grouped.push({ role: m.role, content: displayContent });
+                    }
+                  });
+
+                  return (
+                    <For each={grouped}>
+                      {(message) => (
+                        <div class={`message ${message.role}`}>
+                          <div class="message-label">
+                            {message.role === "user" ? "You" : "Agent"}
+                          </div>
+                          <div class="message-content">
+                            <Markdown>{message.content}</Markdown>
+                          </div>
+                        </div>
+                      )}
+                    </For>
+                  );
+                })()}
 
                 {/* Show current streaming text (when running a new task) */}
                 <Show when={props.currentText && props.isRunning}>
@@ -220,6 +292,17 @@ const AgentMain: Component<AgentMainProps> = (props) => {
                     </Show>
                   </button>
                   <Show when={isInConversation()}>
+                    <Show when={settings().enableUndo}>
+                      <button
+                        type="button"
+                        class="undo-btn ghost"
+                        onClick={handleUndo}
+                        disabled={props.isRunning}
+                        title={t("agent.undo") || "還原"}
+                      >
+                        <Icon name="undo" size={18} />
+                      </button>
+                    </Show>
                     <button
                       type="button"
                       class="new-chat-btn ghost"
