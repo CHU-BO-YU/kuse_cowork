@@ -22,7 +22,8 @@
         "hidePaths": "Hide paths",
         "removePath": "Remove {path}",
         "addFolders": "Add folders to mount",
-        "newChat": "Start new conversation"
+        "newChat": "Start new conversation",
+        "undo": "Undo last action"
     },
     "sidebar": {
         "chat": "Chat",
@@ -71,6 +72,14 @@
             "title": "Data Storage",
             "desc1": "All data is stored locally on your computer in SQLite database.",
             "desc2": "API key is securely stored and never sent to any server except the API provider."
+        },
+        "dataProtection": {
+            "title": "Data Protection",
+            "enableUndo": "Enable Undo",
+            "undoHint": "Automatically backup files before Agent modifies them, supports one-click restore",
+            "backupPath": "Backup Folder Path",
+            "backupPathPlaceholder": "Default: .kuse/backups/",
+            "backupPathHint": "Leave empty to use the default path in the project folder"
         },
         "model": "Model",
         "save": "Save"

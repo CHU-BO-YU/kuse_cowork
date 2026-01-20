@@ -12,6 +12,8 @@ export interface Settings {
   provider_keys: Record<string, string>;  // Provider-specific API keys
   openai_organization?: string;  // Optional OpenAI Organization ID
   openai_project?: string;  // Optional OpenAI Project ID
+  enable_undo: boolean;  // Enable Undo functionality
+  backup_path: string;   // Custom backup path (empty uses default)
 }
 
 export interface Conversation {
@@ -134,6 +136,8 @@ export async function getSettings(): Promise<Settings> {
         max_tokens: parsed.maxTokens || 4096,
         temperature: parsed.temperature ?? 0.7,
         provider_keys: parsed.providerKeys || {},
+        enable_undo: parsed.enableUndo ?? true,
+        backup_path: parsed.backupPath || "",
       };
     }
     return {
@@ -143,6 +147,8 @@ export async function getSettings(): Promise<Settings> {
       max_tokens: 4096,
       temperature: 0.7,
       provider_keys: {},
+      enable_undo: true,
+      backup_path: "",
     };
   }
   return invoke<Settings>("get_settings");
@@ -181,6 +187,8 @@ export async function testConnection(): Promise<string> {
       maxTokens: settings.max_tokens,
       temperature: settings.temperature,
       providerKeys: settings.provider_keys || {},
+      enableUndo: settings.enable_undo,
+      backupPath: settings.backup_path,
     };
 
     return testAIConnection(convertedSettings);
@@ -291,6 +299,8 @@ export async function sendChatMessage(
       maxTokens: settings.max_tokens,
       temperature: settings.temperature,
       providerKeys: settings.provider_keys || {},
+      enableUndo: settings.enable_undo,
+      backupPath: settings.backup_path,
     };
 
     const fullText = await sendAIMessage(messages, convertedSettings, onStream);
@@ -535,3 +545,13 @@ export async function getOllamaModels(baseUrl: string): Promise<OllamaModel[]> {
   }
   return invoke<OllamaModel[]>("get_ollama_models", { baseUrl });
 }
+
+// Undo API
+export async function undoLastAction(conversationId: string): Promise<string> {
+  if (!isTauri()) {
+    // Web fallback - not supported
+    throw new Error("Undo is only available in the desktop app");
+  }
+  return invoke<string>("undo_last_action", { conversationId });
+}
+

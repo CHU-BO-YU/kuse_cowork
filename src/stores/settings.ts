@@ -14,6 +14,8 @@ export interface Settings {
   providerKeys: Record<string, string>;  // Provider-specific API keys
   openaiOrganization?: string;  // Optional OpenAI Organization ID
   openaiProject?: string;  // Optional OpenAI Project ID
+  enableUndo: boolean;  // Enable Undo functionality
+  backupPath: string;   // Custom backup path
 }
 
 // Provider configuration type
@@ -224,6 +226,8 @@ const DEFAULT_SETTINGS: Settings = {
   maxTokens: 4096,
   temperature: 0.7,
   providerKeys: {},
+  enableUndo: true,
+  backupPath: "",
 };
 
 // Get provider ID from model
@@ -238,8 +242,8 @@ export function getProviderFromModel(modelId: string): string {
   const modelLower = modelId.toLowerCase();
 
   // OpenRouter format (contains slash with known prefix)
-  if (modelLower.startsWith("anthropic/") || modelLower.startsWith("openai/") || 
-      modelLower.startsWith("meta-llama/") || modelLower.startsWith("deepseek/")) {
+  if (modelLower.startsWith("anthropic/") || modelLower.startsWith("openai/") ||
+    modelLower.startsWith("meta-llama/") || modelLower.startsWith("deepseek/")) {
     return "openrouter";
   }
 
@@ -288,6 +292,8 @@ function fromApiSettings(api: ApiSettings): Settings {
     providerKeys,
     openaiOrganization: api.openai_organization,
     openaiProject: api.openai_project,
+    enableUndo: api.enable_undo ?? true,
+    backupPath: api.backup_path || "",
   };
 }
 
@@ -308,6 +314,8 @@ function toApiSettings(settings: Settings): ApiSettings {
     provider_keys: providerKeys,
     openai_organization: settings.openaiOrganization,
     openai_project: settings.openaiProject,
+    enable_undo: settings.enableUndo,
+    backup_path: settings.backupPath,
   };
 }
 

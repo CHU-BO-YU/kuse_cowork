@@ -22,7 +22,8 @@
         "hidePaths": "隱藏目錄列表",
         "removePath": "移除 {path}",
         "addFolders": "新增掛載目錄",
-        "newChat": "開始新對話"
+        "newChat": "開始新對話",
+        "undo": "還原上一步"
     },
     "sidebar": {
         "chat": "聊天",
@@ -71,6 +72,14 @@
             "title": "資料儲存",
             "desc1": "所有資料皆儲存於您電腦中的 SQLite 資料庫。",
             "desc2": "API Key 受到安全保護，除了傳送給 API 提供商外，絕不會傳送至其他伺服器。"
+        },
+        "dataProtection": {
+            "title": "資料保護",
+            "enableUndo": "啟用 Undo 功能",
+            "undoHint": "Agent 修改檔案前自動備份，支援一鍵還原",
+            "backupPath": "備份資料夾路徑",
+            "backupPathPlaceholder": "預設: .kuse/backups/",
+            "backupPathHint": "留空使用專案資料夾內的預設路徑"
         },
         "model": "模型",
         "save": "儲存"

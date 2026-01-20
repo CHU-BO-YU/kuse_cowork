@@ -249,6 +249,46 @@ const Settings: Component = () => {
         </div>
 
         <div class="settings-section">
+          <h3>{t("settings.dataProtection.title") || "資料保護"}</h3>
+
+          <div class="form-group">
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <span class="toggle-title">{t("settings.dataProtection.enableUndo") || "啟用 Undo 功能"}</span>
+                <span class="hint">
+                  {t("settings.dataProtection.undoHint") || "Agent 修改檔案前自動備份，支援一鍵還原"}
+                </span>
+              </div>
+              <label class="toggle-switch">
+                <input
+                  type="checkbox"
+                  checked={settings().enableUndo}
+                  onChange={(e) => updateSetting("enableUndo", e.currentTarget.checked)}
+                />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="backupPath">
+              {t("settings.dataProtection.backupPath") || "備份資料夾路徑"}
+              <span class="optional-tag">{t("settings.apiKey.optional")}</span>
+            </label>
+            <input
+              id="backupPath"
+              type="text"
+              value={settings().backupPath}
+              onInput={(e) => updateSetting("backupPath", e.currentTarget.value)}
+              placeholder={t("settings.dataProtection.backupPathPlaceholder") || "預設: .kuse/backups/"}
+            />
+            <span class="hint">
+              {t("settings.dataProtection.backupPathHint") || "留空使用專案資料夾內的預設路徑"}
+            </span>
+          </div>
+        </div>
+
+        <div class="settings-section">
           <h3>{t("settings.dataStorage.title")}</h3>
           <p class="hint" style={{ margin: 0 }}>
             {t("settings.dataStorage.desc1")}

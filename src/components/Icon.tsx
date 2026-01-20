@@ -20,7 +20,8 @@ export type IconName =
     | "cloud"
     | "ollama"
     | "home"
-    | "chevron-down";
+    | "chevron-down"
+    | "undo";
 
 interface IconProps {
     name: IconName;
@@ -161,6 +162,9 @@ const Icon: Component<IconProps> = (props) => {
         ),
         "chevron-down": (
             <polyline points="6 9 12 15 18 9" />
+        ),
+        undo: (
+            <path d="M3 7v6h6M3 13c0-4.4 3.6-8 8-8s8 3.6 8 8-3.6 8-8 8a7.99 7.99 0 0 1-5.6-2.3" />
         )
     };
 
