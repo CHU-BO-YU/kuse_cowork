@@ -1,6 +1,8 @@
 pub mod bash;
 pub mod docker;
+pub mod file_delete;
 pub mod file_edit;
+pub mod file_move;
 pub mod file_read;
 pub mod file_write;
 pub mod glob;
@@ -19,6 +21,8 @@ pub fn get_all_tools() -> Vec<ToolDefinition> {
         glob::definition(),
         grep::definition(),
         list_dir::definition(),
+        file_move::definition(),
+        file_delete::definition(),
     ];
 
     // Add Docker tools

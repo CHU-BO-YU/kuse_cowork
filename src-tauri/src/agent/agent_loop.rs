@@ -35,7 +35,7 @@ impl AgentLoop {
         temperature: Option<f32>,
         mcp_manager: Arc<MCPManager>,
     ) -> Self {
-        Self::new_with_provider(api_key, base_url, config, model, max_tokens, temperature, mcp_manager, None)
+        Self::new_with_provider(api_key, base_url, config, model, max_tokens, temperature, mcp_manager, None, None, None)
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -48,9 +48,20 @@ impl AgentLoop {
         temperature: Option<f32>,
         mcp_manager: Arc<MCPManager>,
         provider_id: Option<&str>,
+        backup_manager: Option<Arc<crate::agent::backup::BackupManager>>,
+        conversation_id: Option<String>,
     ) -> Self {
-        let tool_executor = ToolExecutor::new(config.project_path.clone())
+        let mut tool_executor = ToolExecutor::new(config.project_path.clone())
             .with_mcp_manager(mcp_manager.clone());
+        
+        // Add backup manager if provided
+        if let Some(bm) = backup_manager {
+            tool_executor = tool_executor.with_backup_manager(bm);
+        }
+        if let Some(conv_id) = conversation_id {
+            tool_executor = tool_executor.with_conversation_id(conv_id);
+        }
+        
         let message_builder = MessageBuilder::new(
             config.clone(),
             model.clone(),
@@ -206,8 +217,11 @@ impl AgentLoop {
             // Add tool results as user message
             messages.push(AgentMessage {
                 role: "user".to_string(),
-                content: AgentContent::ToolResults(tool_results),
+                content: AgentContent::ToolResults(tool_results.clone()),
             });
+
+            // Emit tool results for DB saving
+            let _ = event_tx.send(AgentEvent::ToolResults { results: tool_results }).await;
 
             // Emit turn complete
             let _ = event_tx.send(AgentEvent::TurnComplete { turn }).await;
@@ -960,16 +974,20 @@ impl AgentLoop {
 
     /// Parse plan from text content
     fn parse_plan(&self, text: &str) -> Option<Vec<PlanStepInfo>> {
-        // Look for <plan>...</plan> tags
-        let plan_regex = Regex::new(r"(?s)<plan>(.*?)</plan>").ok()?;
-        let captures = plan_regex.captures(text)?;
-        let plan_content = captures.get(1)?.as_str();
+        // Look for <plan>...</plan> tags or ## Plan/## 計畫 markdown headers
+        let plan_content = if let Some(captures) = Regex::new(r"(?s)<plan>(.*?)</plan>").ok()?.captures(text) {
+            captures.get(1)?.as_str().to_string()
+        } else if let Some(captures) = Regex::new(r"(?s)## (?:Plan|計[畫|划])\s*\n(.*?)(?:\n##|$)").ok()?.captures(text) {
+            captures.get(1)?.as_str().to_string()
+        } else {
+            return None;
+        };
 
         // Parse numbered steps like "1. Description"
-        let step_regex = Regex::new(r"(\d+)\.\s*(.+)").ok()?;
+        let step_regex = Regex::new(r"(?m)^\s*(\d+)\.\s*(.+)").ok()?;
         let mut steps = Vec::new();
 
-        for cap in step_regex.captures_iter(plan_content) {
+        for cap in step_regex.captures_iter(&plan_content) {
             if let (Some(num), Some(desc)) = (cap.get(1), cap.get(2)) {
                 if let Ok(step_num) = num.as_str().parse::<i32>() {
                     steps.push(PlanStepInfo {

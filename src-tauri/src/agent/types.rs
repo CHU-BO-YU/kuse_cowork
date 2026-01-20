@@ -111,6 +111,8 @@ impl Default for AgentConfig {
                 "glob".to_string(),
                 "grep".to_string(),
                 "list_dir".to_string(),
+                "move_file".to_string(),
+                "delete_file".to_string(),
                 "docker_run".to_string(),
                 "docker_list".to_string(),
                 "docker_images".to_string(),
@@ -175,6 +177,8 @@ pub enum AgentEvent {
     Done { total_turns: u32 },
     #[serde(rename = "error")]
     Error { message: String },
+    #[serde(rename = "tool_results")]
+    ToolResults { results: Vec<ToolResult> },
 }
 
 #[derive(Debug, Clone, Serialize)]

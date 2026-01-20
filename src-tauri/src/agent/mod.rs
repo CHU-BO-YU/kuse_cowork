@@ -1,4 +1,5 @@
 pub mod agent_loop;
+pub mod backup;
 pub mod message_builder;
 pub mod tool_executor;
 pub mod types;

@@ -1,11 +1,15 @@
 use crate::agent::{ToolResult, ToolUse};
+use crate::agent::backup::BackupManager;
 use crate::mcp::{MCPManager, MCPToolCall};
 use crate::tools;
 use std::sync::Arc;
+use std::path::Path;
 
 pub struct ToolExecutor {
     project_path: Option<String>,
     mcp_manager: Option<Arc<MCPManager>>,
+    backup_manager: Option<Arc<BackupManager>>,
+    conversation_id: Option<String>,
 }
 
 impl ToolExecutor {
@@ -13,11 +17,23 @@ impl ToolExecutor {
         Self {
             project_path,
             mcp_manager: None,
+            backup_manager: None,
+            conversation_id: None,
         }
     }
 
     pub fn with_mcp_manager(mut self, mcp_manager: Arc<MCPManager>) -> Self {
         self.mcp_manager = Some(mcp_manager);
+        self
+    }
+
+    pub fn with_backup_manager(mut self, backup_manager: Arc<BackupManager>) -> Self {
+        self.backup_manager = Some(backup_manager);
+        self
+    }
+
+    pub fn with_conversation_id(mut self, conversation_id: String) -> Self {
+        self.conversation_id = Some(conversation_id);
         self
     }
 
@@ -81,12 +97,65 @@ impl ToolExecutor {
 
         let result = match tool_use.name.as_str() {
             "read_file" => tools::file_read::execute(&tool_use.input, project_path),
-            "write_file" => tools::file_write::execute(&tool_use.input, project_path),
-            "edit_file" => tools::file_edit::execute(&tool_use.input, project_path),
+            "write_file" => {
+                // Create backup before writing
+                if let (Some(bm), Some(conv_id)) = (&self.backup_manager, &self.conversation_id) {
+                    if let Some(path_str) = tool_use.input.get("path").and_then(|v| v.as_str()) {
+                        let file_path = Path::new(path_str);
+                        let _ = bm.create_backup(conv_id, file_path);
+                    }
+                }
+                tools::file_write::execute(&tool_use.input, project_path)
+            },
+            "edit_file" => {
+                // Create backup before editing
+                if let (Some(bm), Some(conv_id)) = (&self.backup_manager, &self.conversation_id) {
+                    if let Some(path_str) = tool_use.input.get("path").and_then(|v| v.as_str()) {
+                        let file_path = Path::new(path_str);
+                        let _ = bm.create_backup(conv_id, file_path);
+                    }
+                }
+                tools::file_edit::execute(&tool_use.input, project_path)
+            },
             "bash" => tools::bash::execute(&tool_use.input, project_path),
             "glob" => tools::glob::execute(&tool_use.input, project_path),
             "grep" => tools::grep::execute(&tool_use.input, project_path),
             "list_dir" => tools::list_dir::execute(&tool_use.input, project_path),
+            "move_file" => {
+                let result = tools::file_move::execute(&tool_use.input, project_path);
+                // Register move for undo after successful execution
+                if result.is_ok() {
+                    if let (Some(bm), Some(conv_id)) = (&self.backup_manager, &self.conversation_id) {
+                        if let (Some(src), Some(dst)) = (
+                            tool_use.input.get("source").and_then(|v| v.as_str()),
+                            tool_use.input.get("destination").and_then(|v| v.as_str())
+                        ) {
+                            bm.register_move(conv_id, Path::new(src), Path::new(dst));
+                        }
+                    }
+                }
+                result
+            },
+            "delete_file" => {
+                let result = tools::file_delete::execute(&tool_use.input, project_path);
+                if let Ok(json_str) = &result {
+                    if let Ok(val) = serde_json::from_str::<serde_json::Value>(json_str) {
+                         if let (Some(bm), Some(conv_id)) = (&self.backup_manager, &self.conversation_id) {
+                             if let (Some(orig_path), Some(trash_path)) = (
+                                 val.get("original_path").and_then(|v| v.as_str()),
+                                 val.get("trash_path").and_then(|v| v.as_str())
+                             ) {
+                                 bm.register_delete(conv_id, Path::new(orig_path), Path::new(trash_path));
+                             }
+                         }
+                         // Return only the message field to the LLM to keep it clean
+                         if let Some(msg) = val.get("message").and_then(|v| v.as_str()) {
+                             return ToolResult::success(tool_use.id.clone(), msg.to_string());
+                         }
+                    }
+                }
+                result
+            },
             _ => Err(format!("Unknown tool: {}", tool_use.name)),
         };
 

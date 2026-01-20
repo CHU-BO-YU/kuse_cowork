@@ -36,6 +36,16 @@ pub struct Settings {
     /// Optional OpenAI Project ID
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub openai_project: Option<String>,
+    /// Enable Undo functionality (backup files before modification)
+    #[serde(default = "default_enable_undo")]
+    pub enable_undo: bool,
+    /// Custom backup path (empty uses default .kuse/backups/)
+    #[serde(default)]
+    pub backup_path: String,
+}
+
+fn default_enable_undo() -> bool {
+    true
 }
 
 impl Default for Settings {
@@ -50,6 +60,8 @@ impl Default for Settings {
             provider_keys: HashMap::new(),
             openai_organization: None,
             openai_project: None,
+            enable_undo: true,
+            backup_path: String::new(),
         }
     }
 }
